@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Box, TimelinePoint } from "../engine/analyzer";
-import { LEVEL_TEXT } from "../engine/scoring";
 import type { Assessment, Sensitivity } from "../engine/types";
 import type { ScannedFace, Scanner } from "../vision/scanner";
 import { LEVEL_COLOR, PersonCard } from "./PersonCard";
 import { buildReport, summaryText, type SourceKind } from "./report";
 import { CopyIcon, DownloadIcon, PauseIcon, PlayIcon, SettingsIcon, StopIcon, TurnIcon } from "./icons";
+import { formatMessage, type Copy } from "./i18n";
 
 type Status = "starting" | "running" | "paused" | "ended" | "error";
 interface Person {
@@ -18,14 +18,14 @@ interface Person {
 const FRAME_INTERVAL_MS = 45; // up to ~20 analyses per second, limited by the video's frame rate
 const CHECK_SECONDS = 12;
 
-export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceKind; file?: File; stream?: MediaStream; scanner: Scanner; onExit: (error?: string) => void }) {
+export function Session({ kind, file, stream, scanner, onExit, copy }: { kind: SourceKind; file?: File; stream?: MediaStream; scanner: Scanner; onExit: (error?: string) => void; copy: Copy }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const latest = useRef<ScannedFace[]>([]);
   const paused = useRef(false);
   const startedAt = useRef(new Date());
   const [status, setStatus] = useState<Status>("starting");
-  const [label, setLabel] = useState(kind === "file" ? file?.name ?? "Video file" : kind === "camera" ? "Your camera" : "Shared window");
+  const [label, setLabel] = useState(kind === "file" ? file?.name ?? copy.session.sources.file : copy.session.sources[kind]);
   const [people, setPeople] = useState<Person[]>([]);
   const [facesNow, setFacesNow] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -54,7 +54,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
     let handle = 0;
     scanner.reset();
 
-    const draw = () => drawOverlay(canvasRef.current, video, overlayRef.current ? latest.current : [], zoomRef.current.region);
+    const draw = () => drawOverlay(canvasRef.current, video, overlayRef.current ? latest.current : [], zoomRef.current.region, copy);
     const tick = () => {
       if (stopped) return;
       const now = performance.now();
@@ -103,8 +103,8 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
         const err = e as DOMException;
         const message =
           kind === "file"
-            ? "This video could not be played. Try an MP4 or WebM file, or another browser."
-            : `Could not start the video: ${err?.message ?? String(e)}`;
+            ? copy.session.videoPlaybackError
+            : formatMessage(copy.session.videoStartError, { message: err?.message ?? String(e) });
         onExit(message);
       }
     })();
@@ -120,7 +120,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
       video.removeAttribute("src");
       video.srcObject = null;
     };
-  }, [kind, file, stream, scanner, onExit]);
+  }, [kind, file, stream, scanner, onExit, copy]);
 
   // Refresh the side panel a few times per second (cheaper than on every frame).
   useEffect(() => {
@@ -145,8 +145,8 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
   }, [scanner, sensitivity]);
 
   useEffect(() => {
-    if (!overlay) drawOverlay(canvasRef.current, videoRef.current, [], zoomRef.current.region);
-  }, [overlay]);
+    if (!overlay) drawOverlay(canvasRef.current, videoRef.current, [], zoomRef.current.region, copy);
+  }, [overlay, copy]);
 
   const setRegion = (region: Box | null) => {
     scanner.setRegion(region);
@@ -181,7 +181,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
     const b = boxFrom(start, p);
     if (b.w > 0.06 && b.h > 0.06) {
       setRegion(b);
-      flash("Analyzing the selected area");
+      flash(copy.session.selectedAreaToast);
     }
   };
 
@@ -224,8 +224,8 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
   };
 
   const report = useCallback(
-    () => buildReport({ kind, label, startedAt: startedAt.current, seconds: elapsed, sensitivity }, scanner.tracker),
-    [kind, label, elapsed, sensitivity, scanner],
+    () => buildReport({ kind, label, startedAt: startedAt.current, seconds: elapsed, sensitivity }, scanner.tracker, copy),
+    [kind, label, elapsed, sensitivity, scanner, copy],
   );
 
   const download = () => {
@@ -235,15 +235,15 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
     a.download = `verilive-report-${startedAt.current.toISOString().slice(0, 19).replace(/[:T]/g, "-")}.json`;
     a.click();
     window.setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    flash("Report saved");
+    flash(copy.session.reportSaved);
   };
 
-  const copy = async () => {
+  const copySummary = async () => {
     try {
-      await navigator.clipboard.writeText(summaryText(report()));
-      flash("Summary copied");
+      await navigator.clipboard.writeText(summaryText(report(), copy));
+      flash(copy.session.summaryCopied);
     } catch {
-      flash("Copy is blocked in this browser");
+      flash(copy.session.copyBlocked);
     }
   };
 
@@ -256,7 +256,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
         <div className="toolbar">
           <span className={`live${status === "running" ? "" : " paused"}`} data-testid="status">
             <i />
-            {status === "starting" ? "Starting" : status === "running" ? "Analyzing" : status === "paused" ? "Paused" : "Finished"} · {fmtTime(elapsed)}
+            {copy.session.status[status]} · {fmtTime(elapsed)}
           </span>
           <span className="muted" style={{ fontSize: 14, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 260 }} title={label}>
             {label}
@@ -265,39 +265,39 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
           {!ended && (
             <button className="btn" onClick={togglePause} disabled={status === "starting"}>
               {status === "paused" ? <PlayIcon /> : <PauseIcon />}
-              <span className="hide-sm">{status === "paused" ? "Resume" : "Pause"}</span>
+              <span className="hide-sm">{status === "paused" ? copy.session.resume : copy.session.pause}</span>
             </button>
           )}
           <div className="rel">
-            <button className="btn" onClick={() => setShowSettings((s) => !s)} aria-expanded={showSettings} aria-label="Settings">
+            <button className="btn" onClick={() => setShowSettings((s) => !s)} aria-expanded={showSettings} aria-label={copy.session.settings}>
               <SettingsIcon />
             </button>
             {showSettings && (
               <div className="card popover">
                 <div className="field">
-                  <label id="sens-label">Sensitivity</label>
+                  <label id="sens-label">{copy.session.sensitivityLabel}</label>
                   <div className="seg" role="group" aria-labelledby="sens-label">
                     {(["relaxed", "balanced", "strict"] as const).map((s) => (
                       <button key={s} aria-pressed={sensitivity === s} onClick={() => setSensitivity(s)}>
-                        {s[0]!.toUpperCase() + s.slice(1)}
+                        {copy.session.sensitivity[s]}
                       </button>
                     ))}
                   </div>
-                  <span className="muted" style={{ fontSize: 13 }}>Strict flags sooner but has more false alarms.</span>
+                  <span className="muted" style={{ fontSize: 13 }}>{copy.session.strictHelp}</span>
                 </div>
                 <label className="field" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <input type="checkbox" checked={overlay} onChange={(e) => setOverlay(e.target.checked)} /> Show face boxes on the video
+                  <input type="checkbox" checked={overlay} onChange={(e) => setOverlay(e.target.checked)} /> {copy.session.showFaceBoxes}
                 </label>
               </div>
             )}
           </div>
           <button className="btn btn-danger" onClick={() => onExit()}>
-            <StopIcon /> <span className="hide-sm">End</span>
+            <StopIcon /> <span className="hide-sm">{copy.session.end}</span>
           </button>
         </div>
 
         <div className="stage">
-          <video ref={videoRef} aria-label="Video being analyzed" />
+          <video ref={videoRef} aria-label={copy.session.videoLabel} />
           <canvas
             ref={canvasRef}
             aria-hidden="true"
@@ -310,86 +310,83 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
           {status !== "starting" && facesNow === 0 && !ended && (
             <div className="empty" data-testid="no-face">
               <div>
-                <b>Looking for a face</b>
-                <span>Make sure the call window shows someone's video, not just their name. Spotlight or pin the person for the best result.</span>
+                <b>{copy.session.lookingForFace}</b>
+                <span>{copy.session.noFaceHelp}</span>
               </div>
             </div>
           )}
           {status === "starting" && (
             <div className="empty">
-              <span className="loading"><span className="spinner" /> Starting video</span>
+              <span className="loading"><span className="spinner" /> {copy.session.startingVideo}</span>
             </div>
           )}
         </div>
         <div className="under">
           {zoom.region ? (
             <span data-testid="zoom">
-              {zoom.auto ? "Zoomed in automatically on a small face." : "Analyzing the area you selected."}{" "}
-              <button className="linkbtn" onClick={() => setRegion(null)}>Use whole video</button>
+              {zoom.auto ? copy.session.zoomedSmallFace : copy.session.selectedArea}{" "}
+              <button className="linkbtn" onClick={() => setRegion(null)}>{copy.session.useWholeVideo}</button>
             </span>
           ) : (
-            <span>Tip: drag a box around a person to focus on them.</span>
+            <span>{copy.session.dragTip}</span>
           )}
-          <span>{facesNow} face{facesNow === 1 ? "" : "s"} in view</span>
-          <span>Processed on this device</span>
-          {hidden && <span style={{ color: "var(--warn)" }}>Keep this tab visible (put it next to the call) so analysis keeps running.</span>}
+          <span>{facesNow} {facesNow === 1 ? copy.session.faceSingular : copy.session.facePlural} {copy.session.inView}</span>
+          <span>{copy.session.processedOnDevice}</span>
+          {hidden && <span style={{ color: "var(--warn)" }}>{copy.session.keepVisible}</span>}
         </div>
         {ended && (
           <div className="card" style={{ marginTop: 14 }} role="status">
-            <h3>{kind === "file" ? "Recording finished" : "Sharing stopped"}</h3>
-            <p className="muted" style={{ marginTop: 4 }}>The results below are final for this session. Save a report if you need a record.</p>
+            <h3>{kind === "file" ? copy.session.recordingFinished : copy.session.sharingStopped}</h3>
+            <p className="muted" style={{ marginTop: 4 }}>{copy.session.finalResults}</p>
           </div>
         )}
       </div>
 
-      <aside className="side" aria-label="Results">
+      <aside className="side" aria-label={copy.session.results}>
         <div aria-live="polite" className="sr-only">
-          {worst && worst.assessment.level !== "collecting" ? `Person ${worst.id}: ${LEVEL_TEXT[worst.assessment.level].title}` : ""}
+          {worst && worst.assessment.level !== "collecting" ? formatMessage(copy.card.personLabel, { person: worst.id, level: copy.levels[worst.assessment.level].title }) : ""}
         </div>
         {people.length === 0 && (
           <div className="card">
-            <div className="panel-title">Results</div>
-            <p className="muted">Each person on screen gets a card here once their face is found.</p>
+            <div className="panel-title">{copy.session.results}</div>
+            <p className="muted">{copy.session.noPeopleYet}</p>
           </div>
         )}
         {people.map((p) => (
-          <PersonCard key={p.id} {...p} />
+          <PersonCard key={p.id} {...p} copy={copy} />
         ))}
 
         <div className="card check">
-          <div className="panel-title">Head-turn check</div>
+          <div className="panel-title">{copy.session.headTurnCheck}</div>
           {checkLeft === null ? (
             <>
               <ol>
-                <li>Ask them: "Could you slowly turn your head to the left, then to the right?"</li>
-                <li>Press start while they do it.</li>
+                <li>{copy.session.headTurnPrompt}</li>
+                <li>{copy.session.pressStart}</li>
               </ol>
               <button className="btn btn-primary" onClick={startCheck} disabled={ended || status !== "running"} data-testid="start-check">
-                <TurnIcon /> Start {CHECK_SECONDS}-second check
+                <TurnIcon /> {formatMessage(copy.session.startCheck, { seconds: CHECK_SECONDS })}
               </button>
-              {checkDone && <p className="muted" style={{ fontSize: 14 }}>Done. The head-turn result is in each person's signals.</p>}
+              {checkDone && <p className="muted" style={{ fontSize: 14 }}>{copy.session.checkDone}</p>}
             </>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <span className="count" aria-live="polite">{checkLeft}</span>
-              <span className="muted">Recording the head turn. Keep the face in view.</span>
+              <span className="muted">{copy.session.recordingTurn}</span>
             </div>
           )}
         </div>
 
         <div className="card">
-          <div className="panel-title">Verify another way</div>
+          <div className="panel-title">{copy.session.verifyAnotherWay}</div>
           <ul className="tips">
-            <li>Hang up and call back on a number you already have.</li>
-            <li>Ask something only the real person would know.</li>
-            <li>Ask them to wave a hand slowly in front of their face.</li>
-            <li>Never move money or share codes because of a video call alone.</li>
+            {copy.session.verifyTips.map((tip) => <li key={tip}>{tip}</li>)}
           </ul>
         </div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button className="btn" onClick={download} disabled={!people.length}><DownloadIcon /> Save report</button>
-          <button className="btn" onClick={copy} disabled={!people.length}><CopyIcon /> Copy summary</button>
+          <button className="btn" onClick={download} disabled={!people.length}><DownloadIcon /> {copy.session.saveReport}</button>
+          <button className="btn" onClick={copySummary} disabled={!people.length}><CopyIcon /> {copy.session.copySummary}</button>
         </div>
       </aside>
       {toast && <div className="toast" role="status">{toast}</div>}
@@ -407,7 +404,7 @@ function fmtTime(s: number): string {
 }
 
 /** Draws a box and a label for each face, matching the letterboxed video position. */
-function drawOverlay(canvas: HTMLCanvasElement | null, video: HTMLVideoElement | null, faces: ScannedFace[], region: Box | null): void {
+function drawOverlay(canvas: HTMLCanvasElement | null, video: HTMLVideoElement | null, faces: ScannedFace[], region: Box | null, copy: Copy): void {
   if (!canvas || !video) return;
   const dpr = window.devicePixelRatio || 1;
   const cw = canvas.clientWidth;
@@ -452,7 +449,7 @@ function drawOverlay(canvas: HTMLCanvasElement | null, video: HTMLVideoElement |
       ctx.arc(ox + p.x * vw * scale, oy + p.y * vh * scale, 1.8, 0, Math.PI * 2);
       ctx.fill();
     }
-    const text = `Person ${f.id} · ${LEVEL_TEXT[f.assessment.level].title}`;
+    const text = `${copy.card.person} ${f.id} · ${copy.levels[f.assessment.level].title}`;
     ctx.font = "600 13px Onest Variable, system-ui, sans-serif";
     const tw = ctx.measureText(text).width + 16;
     const ty = Math.max(0, y - 26);

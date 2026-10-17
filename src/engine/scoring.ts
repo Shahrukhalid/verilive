@@ -72,10 +72,3 @@ export function combine(signals: SignalResult[], sensitivity: Sensitivity = "bal
 
   return { level, score: clamp(score), confidence, signals, reasons };
 }
-
-export const LEVEL_TEXT: Record<RiskLevel, { title: string; advice: string }> = {
-  collecting: { title: "Analyzing", advice: "Keep the person's face visible. A first reading takes about 15 seconds." },
-  low: { title: "Looks real", advice: "No signs of a synthetic face so far. Stay alert if they ask for money, passwords or urgent favours." },
-  elevated: { title: "Some warning signs", advice: "Run a head-turn check and verify who they are another way before acting on anything." },
-  high: { title: "Likely synthetic", advice: "Do not share information or send money. Hang up and contact the person through a number you already know." },
-};

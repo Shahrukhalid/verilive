@@ -1,5 +1,5 @@
 import { clamp, mean, ramp, round, std } from "./dsp";
-import type { FaceFrame, SignalResult } from "./types";
+import type { FaceFrame, SignalDetail, SignalResult } from "./types";
 
 const CLOSE = 0.5;
 const OPEN = 0.3;
@@ -45,10 +45,10 @@ export function blinkStats(frames: FaceFrame[]): BlinkStats {
  */
 export function analyzeBlink(frames: FaceFrame[]): SignalResult {
   const s = blinkStats(frames);
-  const base = { id: "blink" as const, label: "Blinking" };
+  const base = { id: "blink" as const };
   const metrics = { count: s.count, perMinute: round(s.perMinute, 1), regularity: round(s.regularity), asymmetry: round(s.asymmetry), duration: round(s.duration, 1) };
   if (s.duration < 15) {
-    return { ...base, suspicion: 0, confidence: 0, detail: "Watching blinks for a little longer.", metrics };
+    return { ...base, suspicion: 0, confidence: 0, detail: { key: "blink.collecting" }, metrics };
   }
   const none = s.count === 0 ? ramp(s.duration, 25, 60) : 0;
   const tooMany = ramp(s.perMinute, 45, 70);
@@ -56,13 +56,13 @@ export function analyzeBlink(frames: FaceFrame[]): SignalResult {
   const oneEyed = ramp(s.asymmetry, 0.08, 0.25);
   const suspicion = clamp(Math.max(none * 0.8, tooMany * 0.6, metronome * 0.75, oneEyed * 0.7));
   const confidence = clamp(ramp(s.duration, 15, 60) * 0.8);
-  let detail =
+  let detail: SignalDetail =
     s.count === 0
-      ? `No blinks yet in ${Math.round(s.duration)} seconds, which is still within the normal range.`
-      : `${s.count} natural-looking blink${s.count === 1 ? "" : "s"} (${Math.round(s.perMinute)} per minute).`;
-  if (none > 0.3) detail = `No blinks in ${Math.round(s.duration)} seconds. People usually blink every few seconds.`;
-  else if (metronome > 0.5) detail = "Blinks happen at suspiciously regular intervals.";
-  else if (oneEyed > 0.5) detail = "The eyes often close separately, which is unusual for real blinks.";
-  else if (tooMany > 0.5) detail = `Very frequent blinking (${Math.round(s.perMinute)} per minute).`;
+      ? { key: "blink.noneYet", values: { seconds: Math.round(s.duration) } }
+      : { key: s.count === 1 ? "blink.oneNatural" : "blink.manyNatural", values: { count: s.count, perMinute: Math.round(s.perMinute) } };
+  if (none > 0.3) detail = { key: "blink.none", values: { seconds: Math.round(s.duration) } };
+  else if (metronome > 0.5) detail = { key: "blink.regular" };
+  else if (oneEyed > 0.5) detail = { key: "blink.asymmetric" };
+  else if (tooMany > 0.5) detail = { key: "blink.frequent", values: { perMinute: Math.round(s.perMinute) } };
   return { ...base, suspicion, confidence, detail, metrics };
 }

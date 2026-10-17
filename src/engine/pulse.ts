@@ -72,12 +72,12 @@ function averageRgb(...cs: (RGB | null)[]): RGB | null {
  * photos usually lack a clean, consistent pulse, and their regions do not pulse together.
  */
 export function analyzePulse(frames: FaceFrame[]): SignalResult {
-  const base: Omit<SignalResult, "suspicion" | "confidence" | "detail" | "metrics"> = { id: "pulse", label: "Pulse in skin colour" };
+  const base: Omit<SignalResult, "suspicion" | "confidence" | "detail" | "metrics"> = { id: "pulse" };
   const all = regionSeries(frames, (f) => averageRgb(f.forehead, f.leftCheek, f.rightCheek));
   const duration = all.t.length > 1 ? all.t[all.t.length - 1]! - all.t[0]! : 0;
   const fps = duration > 0 ? (all.t.length - 1) / duration : 0;
   if (duration < 5 || fps < 4) {
-    return { ...base, suspicion: 0, confidence: 0, detail: "Collecting a few seconds of skin colour to look for a pulse.", metrics: { duration, fps } };
+    return { ...base, suspicion: 0, confidence: 0, detail: { key: "pulse.collecting" }, metrics: { duration, fps } };
   }
 
   const wave = bandpass(pos(uniformRgb(all), FS), FS, LO_HZ, HI_HZ);
@@ -106,10 +106,10 @@ export function analyzePulse(frames: FaceFrame[]): SignalResult {
   const bpm = Math.round(peak.freq * 60);
   const detail =
     suspicion < 0.35
-      ? `Natural pulse found (about ${bpm} bpm) and the face regions beat together.`
+      ? { key: "pulse.natural" as const, values: { bpm } }
       : suspicion < 0.65
-        ? `Weak pulse signal. This is common with heavy video compression or poor lighting.`
-        : `No consistent pulse in the skin colour, as seen in replayed or generated faces.`;
+        ? { key: "pulse.weak" as const }
+        : { key: "pulse.absent" as const };
   return { ...base, suspicion, confidence, detail, metrics: { bpm, snrDb: round(snr), coherence: round(coherence), duration: round(duration), fps: round(fps) } };
 }
 

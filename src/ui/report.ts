@@ -1,6 +1,6 @@
 import type { FaceTracker } from "../engine/analyzer";
-import { LEVEL_TEXT } from "../engine/scoring";
 import type { Sensitivity } from "../engine/types";
+import { formatMessage, formatSignalDetail, type Copy } from "./i18n";
 
 export const APP_VERSION = "1.0.0";
 
@@ -15,11 +15,11 @@ export interface SessionInfo {
 }
 
 /** A self-contained record of the session. Contains numbers only: no images or video. */
-export function buildReport(info: SessionInfo, tracker: FaceTracker) {
+export function buildReport(info: SessionInfo, tracker: FaceTracker, copy: Copy) {
   return {
     tool: "Verilive",
     version: APP_VERSION,
-    note: "Risk signals, not proof. Verify identity through another channel before acting.",
+    note: copy.app.riskNote,
     source: { kind: info.kind, label: info.label },
     startedAt: info.startedAt.toISOString(),
     durationSeconds: Math.round(info.seconds),
@@ -32,11 +32,11 @@ export function buildReport(info: SessionInfo, tracker: FaceTracker) {
         return {
           person: id,
           level: a.level,
-          verdict: LEVEL_TEXT[a.level].title,
+          verdict: copy.levels[a.level].title,
           score: round(a.score),
           confidence: round(a.confidence),
-          reasons: a.reasons,
-          signals: a.signals.map((s) => ({ id: s.id, label: s.label, suspicion: round(s.suspicion), confidence: round(s.confidence), detail: s.detail, metrics: s.metrics })),
+          reasons: a.reasons.map((reason) => formatSignalDetail(copy, reason)),
+          signals: a.signals.map((s) => ({ id: s.id, label: copy.signalLabels[s.id], suspicion: round(s.suspicion), confidence: round(s.confidence), detail: formatSignalDetail(copy, s.detail), metrics: s.metrics })),
           timeline: analyzer.timeline.map((p) => ({ t: round(p.t, 1), score: round(p.score), confidence: round(p.confidence) })),
         };
       }),
@@ -45,11 +45,15 @@ export function buildReport(info: SessionInfo, tracker: FaceTracker) {
 
 export type Report = ReturnType<typeof buildReport>;
 
-export function summaryText(r: Report): string {
-  const lines = [`Verilive check · ${new Date(r.startedAt).toLocaleString()} · ${Math.round(r.durationSeconds / 60)} min · ${r.source.label}`];
-  if (!r.people.length) lines.push("No faces were analyzed.");
+export function summaryText(r: Report, copy: Copy): string {
+  const lines = [formatMessage(copy.report.header, {
+    date: new Date(r.startedAt).toLocaleString(copy.locale),
+    minutes: Math.round(r.durationSeconds / 60),
+    source: r.source.label,
+  })];
+  if (!r.people.length) lines.push(copy.report.noFaces);
   for (const p of r.people) {
-    lines.push(`Person ${p.person}: ${p.verdict} (risk ${Math.round(p.score * 100)}%, evidence ${Math.round(p.confidence * 100)}%)`);
+    lines.push(`${formatMessage(copy.report.person, { person: p.person, verdict: p.verdict })} (${formatMessage(copy.report.risk, { percent: Math.round(p.score * 100) })}, ${formatMessage(copy.report.evidence, { percent: Math.round(p.confidence * 100) })})`);
     for (const reason of p.reasons) lines.push(`  - ${reason}`);
   }
   lines.push(r.note);

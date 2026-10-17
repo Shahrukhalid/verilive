@@ -37,6 +37,18 @@ test("home page explains the tool and enforces a strict content policy", async (
   expect(errors).toEqual([]);
 });
 
+test.describe("Spanish browser language", () => {
+  test.use({ locale: "es-ES" });
+
+  test("shows translated home copy and sets the document language", async ({ page }) => {
+    await page.goto("./");
+    await expect(page.locator("html")).toHaveAttribute("lang", "es");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("¿La persona de tu videollamada");
+    await expect(page.getByText("Señales, no pruebas.", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Analizar una llamada en directo" })).toBeVisible();
+  });
+});
+
 test("a photo held up to the camera is flagged", async ({ page }) => {
   await analyzeFile(page, "photo-replay.webm");
   await waitForEnd(page);

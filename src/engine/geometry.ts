@@ -43,17 +43,17 @@ export function rigidResidual(prev: Point[], cur: Point[]): number {
 
 /** Landmarks of real faces move smoothly. Swapped faces often shimmer between frames. */
 export function analyzeJitter(frames: FaceFrame[]): SignalResult {
-  const base = { id: "jitter" as const, label: "Face shape stability" };
+  const base = { id: "jitter" as const };
   const values = frames.map((f) => f.jitter).filter((j) => j > 0 && Number.isFinite(j));
   if (values.length < 30) {
-    return { ...base, suspicion: 0, confidence: 0, detail: "Measuring how steady the face shape is.", metrics: { frames: values.length } };
+    return { ...base, suspicion: 0, confidence: 0, detail: { key: "jitter.collecting" }, metrics: { frames: values.length } };
   }
   const j = median(values) * 1000;
   const motion = mean(frames.map((f) => f.motion));
   const size = mean(frames.map((f) => f.faceWidthPx));
   const suspicion = ramp(j, 8, 18);
   const confidence = clamp(ramp(values.length, 30, 200) * ramp(size, 50, 120) * (1 - ramp(motion, 0.04, 0.12)) * 0.55);
-  const detail = suspicion < 0.35 ? "The face shape stays steady between frames." : "The face shape wobbles between frames more than a real face does.";
+  const detail = suspicion < 0.35 ? { key: "jitter.steady" as const } : { key: "jitter.unstable" as const };
   return { ...base, suspicion, confidence, detail, metrics: { jitterPerMille: round(j) } };
 }
 
@@ -62,7 +62,7 @@ export function analyzeJitter(frames: FaceFrame[]): SignalResult {
  * Compares stability when the face is turned away against when it faces the camera.
  */
 export function analyzePose(frames: FaceFrame[]): SignalResult {
-  const base = { id: "pose" as const, label: "Head-turn test" };
+  const base = { id: "pose" as const };
   const frontal = frames.filter((f) => Math.abs(f.yaw) < 12);
   const turned = frames.filter((f) => Math.abs(f.yaw) > 28);
   const maxYaw = frames.reduce((m, f) => Math.max(m, Math.abs(f.yaw)), 0);
@@ -71,7 +71,7 @@ export function analyzePose(frames: FaceFrame[]): SignalResult {
       ...base,
       suspicion: 0,
       confidence: 0,
-      detail: maxYaw < 28 ? "Not tested yet. Ask them to turn their head slowly to each side." : "Need a little more footage of the head turned.",
+      detail: { key: maxYaw < 28 ? "pose.notTested" : "pose.moreFootage" },
       metrics: { maxYaw: Math.round(maxYaw), turnedFrames: turned.length },
     };
   }
@@ -79,7 +79,7 @@ export function analyzePose(frames: FaceFrame[]): SignalResult {
   const ratio = jitterOf(turned) / Math.max(jitterOf(frontal), 1e-6);
   const suspicion = ramp(ratio, 2.2, 4.5);
   const confidence = clamp(ramp(turned.length, 8, 40) * 0.8);
-  const detail = suspicion < 0.35 ? "The face stays consistent when the head turns." : "The face becomes unstable when the head turns, a common weakness of face swaps.";
+  const detail = suspicion < 0.35 ? { key: "pose.consistent" as const } : { key: "pose.unstable" as const };
   return { ...base, suspicion, confidence, detail, metrics: { turnedToFrontal: round(ratio), maxYaw: Math.round(maxYaw), turnedFrames: turned.length } };
 }
 

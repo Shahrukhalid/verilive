@@ -4,7 +4,7 @@ import { combine } from "../../src/engine/scoring";
 import type { SignalResult } from "../../src/engine/types";
 import { naturalBlinks, synthFrames } from "./synth";
 
-const sig = (id: SignalResult["id"], suspicion: number, confidence: number): SignalResult => ({ id, label: id, suspicion, confidence, detail: id, metrics: {} });
+const sig = (id: SignalResult["id"], suspicion: number, confidence: number): SignalResult => ({ id, suspicion, confidence, detail: { key: "texture.matches" }, metrics: {} });
 
 describe("combine", () => {
   it("says collecting until there is enough evidence", () => {
@@ -21,7 +21,7 @@ describe("combine", () => {
   it("raises a flag for one strong, well-supported tell", () => {
     const r = combine([sig("pulse", 0.05, 0.9), sig("blink", 0.05, 0.9), sig("texture", 0.95, 0.8), sig("jitter", 0, 0.9)]);
     expect(r.level).toBe("elevated");
-    expect(r.reasons[0]).toBe("texture");
+    expect(r.reasons[0]).toEqual({ key: "texture.matches" });
   });
 
   it("a clean-looking face with no signs of life is still flagged", () => {

@@ -4,6 +4,7 @@ import { Home } from "./Home";
 import { GithubIcon, Logo, SunMoonIcon } from "./icons";
 import { APP_VERSION, type SourceKind } from "./report";
 import { Session } from "./Session";
+import { formatMessage, messagesFor, type Copy } from "./i18n";
 
 type Theme = "system" | "light" | "dark";
 const REPO = "https://github.com/Shahrukhalid/verilive";
@@ -18,6 +19,7 @@ function readTheme(): Theme {
 }
 
 export function App() {
+  const copy = messagesFor(typeof navigator === "undefined" ? undefined : navigator.language);
   const [scanner, setScanner] = useState<Scanner | null>(null);
   const scannerRef = useRef<Scanner | null>(null);
   const [view, setView] = useState<{ kind: SourceKind; file?: File; stream?: MediaStream; key: number } | null>(null);
@@ -27,6 +29,8 @@ export function App() {
 
   useEffect(() => {
     const root = document.documentElement;
+    root.lang = copy.locale;
+    document.title = copy.app.documentTitle;
     if (theme === "system") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", theme);
     try {
@@ -34,7 +38,7 @@ export function App() {
     } catch {
       /* storage can be unavailable (private mode); the theme still applies */
     }
-  }, [theme]);
+  }, [copy, theme]);
 
   useEffect(() => () => scannerRef.current?.close(), []);
 
@@ -49,12 +53,12 @@ export function App() {
       if (kind === "screen") stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30 } }, audio: false });
       if (kind === "camera") stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
     } catch (e) {
-      setError(sourceError(kind, e));
+      setError(sourceError(kind, e, copy.errors));
       return;
     }
     try {
       if (!scannerRef.current) {
-        setLoading("Loading the face model. The first visit takes a few seconds; after that it is cached.");
+        setLoading(copy.app.loadingModel);
         const s = new Scanner();
         await s.init(4);
         scannerRef.current = s;
@@ -63,11 +67,11 @@ export function App() {
       setView({ kind, file, stream, key: Date.now() });
     } catch (e) {
       stream?.getTracks().forEach((t) => t.stop());
-      setError(`The face model could not load in this browser: ${(e as Error).message}. Try a recent Chrome, Edge or Firefox.`);
+      setError(formatMessage(copy.app.modelError, { message: (e as Error).message }));
     } finally {
       setLoading(null);
     }
-  }, []);
+  }, [copy]);
 
   const exit = useCallback((message?: string) => {
     setView(null);
@@ -75,22 +79,23 @@ export function App() {
   }, []);
 
   const nextTheme: Record<Theme, Theme> = { system: "dark", dark: "light", light: "system" };
+  const themeName = copy.app.themes[theme];
 
   return (
     <div className="shell">
       <header className="topbar">
         <div className="wrap">
-          <button className="brand" onClick={() => setView(null)} aria-label="Verilive home">
+          <button className="brand" onClick={() => setView(null)} aria-label={copy.app.documentTitle}>
             <Logo />
             <span className="brand-name">Verilive</span>
-            <span className="brand-tag">deepfake check</span>
+            <span className="brand-tag">{copy.app.tagline}</span>
           </button>
           <span className="spacer" />
-          <button className="iconbtn" onClick={() => setTheme(nextTheme[theme])} aria-label={`Theme: ${theme}. Switch theme`} title={`Theme: ${theme}`}>
-            <SunMoonIcon /> <span className="hide-sm">{theme === "system" ? "Auto" : theme === "dark" ? "Dark" : "Light"}</span>
+          <button className="iconbtn" onClick={() => setTheme(nextTheme[theme])} aria-label={`${formatMessage(copy.app.themeLabel, { theme: themeName })}. ${copy.app.switchTheme}`} title={formatMessage(copy.app.themeLabel, { theme: themeName })}>
+            <SunMoonIcon /> <span className="hide-sm">{themeName}</span>
           </button>
           <a className="iconbtn" href={REPO} target="_blank" rel="noopener noreferrer">
-            <GithubIcon /> <span className="hide-sm">Star on GitHub</span>
+            <GithubIcon /> <span className="hide-sm">{copy.app.starOnGitHub}</span>
           </a>
         </div>
       </header>
@@ -104,18 +109,18 @@ export function App() {
       )}
 
       {view && scanner ? (
-        <Session key={view.key} kind={view.kind} file={view.file} stream={view.stream} scanner={scanner} onExit={exit} />
+        <Session key={view.key} kind={view.kind} file={view.file} stream={view.stream} scanner={scanner} onExit={exit} copy={copy} />
       ) : (
-        <Home onStart={start} error={error} />
+        <Home onStart={start} error={error} copy={copy} />
       )}
 
       <footer className="footer">
         <div className="wrap">
-          <span>Verilive {APP_VERSION} · MIT licensed · Risk signals, not proof.</span>
+          <span>Verilive {APP_VERSION} · {copy.app.footerLicense} · {copy.app.riskNote}</span>
           <span>
-            <a href={`${REPO}#how-it-works`} target="_blank" rel="noopener noreferrer">How it works</a> ·{" "}
-            <a href={`${REPO}/blob/main/docs/LIMITATIONS.md`} target="_blank" rel="noopener noreferrer">Limitations</a> ·{" "}
-            <a href={`${REPO}/issues`} target="_blank" rel="noopener noreferrer">Report a problem</a>
+            <a href={`${REPO}#how-it-works`} target="_blank" rel="noopener noreferrer">{copy.app.howItWorks}</a> ·{" "}
+            <a href={`${REPO}/blob/main/docs/LIMITATIONS.md`} target="_blank" rel="noopener noreferrer">{copy.app.limitations}</a> ·{" "}
+            <a href={`${REPO}/issues`} target="_blank" rel="noopener noreferrer">{copy.app.reportProblem}</a>
           </span>
         </div>
       </footer>
@@ -123,14 +128,14 @@ export function App() {
   );
 }
 
-function sourceError(kind: SourceKind, e: unknown): string {
+function sourceError(kind: SourceKind, e: unknown, errors: Copy["errors"]): string {
   const name = (e as DOMException)?.name;
   if (name === "NotAllowedError" || name === "AbortError") {
     return kind === "camera"
-      ? "Camera access was blocked. Allow it from the browser's address bar and try again."
-      : "Screen sharing was cancelled. Click \"Check a live call\" again and pick the call window.";
+      ? errors.cameraBlocked
+      : errors.screenCancelled;
   }
-  if (name === "NotFoundError") return "No camera was found on this device.";
-  if (name === "NotReadableError") return "The camera is busy in another app. Close it there and try again.";
-  return `Could not start: ${(e as Error)?.message ?? String(e)}`;
+  if (name === "NotFoundError") return errors.noCamera;
+  if (name === "NotReadableError") return errors.cameraBusy;
+  return formatMessage(errors.couldNotStart, { message: (e as Error)?.message ?? String(e) });
 }

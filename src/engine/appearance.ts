@@ -7,11 +7,11 @@ import type { FaceFrame, SignalResult } from "./types";
  * around it, even though it contains the most detailed features.
  */
 export function analyzeTexture(frames: FaceFrame[]): SignalResult {
-  const base = { id: "texture" as const, label: "Face sharpness match" };
+  const base = { id: "texture" as const };
   const ratios = frames.filter((f) => f.outerSharpness > 0.5).map((f) => f.innerSharpness / f.outerSharpness);
   const size = mean(frames.map((f) => f.faceWidthPx));
   if (ratios.length < 20) {
-    return { ...base, suspicion: 0, confidence: 0, detail: "Comparing detail inside and around the face.", metrics: { frames: ratios.length } };
+    return { ...base, suspicion: 0, confidence: 0, detail: { key: "texture.collecting" }, metrics: { frames: ratios.length } };
   }
   const ratio = median(ratios);
   // Eyes, brows and lips make the feature area clearly sharper than the cheeks on a real
@@ -20,10 +20,10 @@ export function analyzeTexture(frames: FaceFrame[]): SignalResult {
   const confidence = clamp(ramp(ratios.length, 20, 120) * ramp(size, 60, 150) * 0.75);
   const detail =
     suspicion < 0.35
-      ? "Detail inside the face matches the surrounding skin."
+      ? { key: "texture.matches" as const }
       : suspicion < 0.65
-        ? "The inner face is a little softer than its surroundings. Beauty filters can also cause this."
-        : "The inner face is much blurrier than the skin around it, a common face-swap artifact.";
+        ? { key: "texture.softer" as const }
+        : { key: "texture.blurry" as const };
   return { ...base, suspicion, confidence, detail, metrics: { innerToOuterSharpness: round(ratio), frames: ratios.length } };
 }
 
@@ -32,9 +32,9 @@ export function analyzeTexture(frames: FaceFrame[]): SignalResult {
  * real skin around it. Lighting changes affect both areas together and cancel out here.
  */
 export function analyzeFlicker(frames: FaceFrame[]): SignalResult {
-  const base = { id: "flicker" as const, label: "Colour flicker at face edge" };
+  const base = { id: "flicker" as const };
   if (frames.length < 30) {
-    return { ...base, suspicion: 0, confidence: 0, detail: "Watching for colour flicker around the face.", metrics: { frames: frames.length } };
+    return { ...base, suspicion: 0, confidence: 0, detail: { key: "flicker.collecting" }, metrics: { frames: frames.length } };
   }
   const steps: number[] = [];
   for (let i = 1; i < frames.length; i++) {
@@ -54,7 +54,7 @@ export function analyzeFlicker(frames: FaceFrame[]): SignalResult {
   const confidence = clamp(ramp(steps.length, 30, 200) * (1 - ramp(motion, 0.03, 0.1)) * 0.6);
   const detail =
     suspicion < 0.35
-      ? "Skin colour inside and around the face moves together."
-      : "The inner face changes colour on its own from frame to frame, which can mean it is being re-rendered.";
+      ? { key: "flicker.together" as const }
+      : { key: "flicker.changes" as const };
   return { ...base, suspicion, confidence, detail, metrics: { flicker: round(flicker), spread: round(spread) } };
 }

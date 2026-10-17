@@ -32,15 +32,27 @@ export interface FaceFrame {
 
 export type SignalId = "pulse" | "blink" | "texture" | "flicker" | "jitter" | "pose";
 
+export type SignalMessageKey =
+  | "pulse.collecting" | "pulse.natural" | "pulse.weak" | "pulse.absent"
+  | "blink.collecting" | "blink.noneYet" | "blink.oneNatural" | "blink.manyNatural" | "blink.none" | "blink.regular" | "blink.asymmetric" | "blink.frequent"
+  | "texture.collecting" | "texture.matches" | "texture.softer" | "texture.blurry"
+  | "flicker.collecting" | "flicker.together" | "flicker.changes"
+  | "jitter.collecting" | "jitter.steady" | "jitter.unstable"
+  | "pose.notTested" | "pose.moreFootage" | "pose.consistent" | "pose.unstable";
+
+export interface SignalDetail {
+  key: SignalMessageKey;
+  values?: Record<string, number>;
+}
+
 export interface SignalResult {
   id: SignalId;
-  label: string;
   /** 0 = looks natural, 1 = looks synthetic. */
   suspicion: number;
   /** 0 = not enough data to judge, 1 = solid evidence. */
   confidence: number;
-  /** One plain-language sentence for the user. */
-  detail: string;
+  /** Stable message key and values so the UI can translate detector details. */
+  detail: SignalDetail;
   /** Raw numbers for the report. */
   metrics: Record<string, number>;
 }
@@ -55,7 +67,7 @@ export interface Assessment {
   confidence: number;
   signals: SignalResult[];
   /** The most important reasons, in order. */
-  reasons: string[];
+  reasons: SignalDetail[];
 }
 
 export type Sensitivity = "relaxed" | "balanced" | "strict";
