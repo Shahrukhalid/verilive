@@ -1,0 +1,17 @@
+name: Feature request
+description: Suggest an idea or a new detection signal
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would it solve?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: If it's a new signal, link any research that describes it.
+    validations:
+      required: true

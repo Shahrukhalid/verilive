@@ -1,0 +1,10 @@
+node_modules/
+dist/
+public/mediapipe/
+playwright-report/
+test-results/
+tests/e2e/fixtures/local/
+.DS_Store
+*.log
+.env
+docs/demo-raw/

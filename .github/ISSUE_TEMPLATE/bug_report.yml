@@ -1,0 +1,38 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve Verilive. Please don't attach recordings of real people without their consent; describe the situation instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Source
+      options: [Live call (shared window), Video file, Camera]
+    validations:
+      required: true
+  - type: input
+    id: app
+    attributes:
+      label: Call app (if any)
+      placeholder: Zoom desktop, Google Meet in Chrome, Teams...
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and operating system
+      placeholder: Chrome 141 on Windows 11
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Report (optional)
+      description: Paste the "Copy summary" text or attach the saved report JSON. It contains numbers only, no images.

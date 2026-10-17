@@ -1,0 +1,51 @@
+{
+  "name": "verilive",
+  "version": "1.0.0",
+  "description": "Open-source, in-browser deepfake risk detector for video calls. Nothing leaves your computer.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "Shahrukhalid",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shahrukhalid/verilive.git"
+  },
+  "homepage": "https://shahrukhalid.github.io/verilive/",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "prepare-assets": "node scripts/copy-wasm.mjs && node scripts/verify-model.mjs",
+    "dev": "npm run prepare-assets && vite",
+    "build": "npm run prepare-assets && tsc -p tsconfig.json --noEmit && vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build && npm run e2e"
+  },
+  "dependencies": {
+    "@fontsource-variable/onest": "5.3.1",
+    "@fontsource-variable/sora": "5.3.0",
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@mediapipe/tasks-vision": "1.1.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "eslint": "10.13.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.13.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.5"
+  }
+}
