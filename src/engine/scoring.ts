@@ -63,19 +63,11 @@ export function combine(signals: SignalResult[], sensitivity: Sensitivity = "bal
   const strong = signals.some((s) => s.suspicion >= 0.8 && s.confidence >= 0.6);
   if (strong && level === "low") level = "elevated";
 
-  const reasons = signals
+  const top = signals
     .filter((s) => s.confidence >= 0.25)
     .sort((a, b) => b.suspicion * WEIGHTS[b.id] * b.confidence - a.suspicion * WEIGHTS[a.id] * a.confidence)
     .filter((s) => (level === "low" ? true : s.suspicion >= 0.35))
-    .slice(0, 3)
-    .map((s) => s.detail);
+    .slice(0, 3);
 
-  return { level, score: clamp(score), confidence, signals, reasons };
+  return { level, score: clamp(score), confidence, signals, reasons: top.map((s) => s.detail), reasonIds: top.map((s) => s.id) };
 }
-
-export const LEVEL_TEXT: Record<RiskLevel, { title: string; advice: string }> = {
-  collecting: { title: "Analyzing", advice: "Keep the person's face visible. A first reading takes about 15 seconds." },
-  low: { title: "Looks real", advice: "No signs of a synthetic face so far. Stay alert if they ask for money, passwords or urgent favours." },
-  elevated: { title: "Some warning signs", advice: "Run a head-turn check and verify who they are another way before acting on anything." },
-  high: { title: "Likely synthetic", advice: "Do not share information or send money. Hang up and contact the person through a number you already know." },
-};

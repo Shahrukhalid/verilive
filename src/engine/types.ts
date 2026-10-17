@@ -1,5 +1,7 @@
 /** Shared types for the detection engine. Everything here is plain data (no DOM). */
 
+import type { Params, TranslationKey } from "../i18n";
+
 export type RGB = [number, number, number];
 
 /** Measurements taken from one video frame for one tracked face. */
@@ -39,8 +41,11 @@ export interface SignalResult {
   suspicion: number;
   /** 0 = not enough data to judge, 1 = solid evidence. */
   confidence: number;
-  /** One plain-language sentence for the user. */
+  /** One plain-language sentence for the user, in English. */
   detail: string;
+  /** The same sentence as a translation key plus parameters, so the interface can show it in any language. */
+  detailKey?: TranslationKey;
+  detailParams?: Params;
   /** Raw numbers for the report. */
   metrics: Record<string, number>;
 }
@@ -54,8 +59,10 @@ export interface Assessment {
   /** How much evidence backs the score, 0..1. */
   confidence: number;
   signals: SignalResult[];
-  /** The most important reasons, in order. */
+  /** The most important reasons, in order, in English. */
   reasons: string[];
+  /** The signals behind `reasons`, in the same order, for translating them. */
+  reasonIds: SignalId[];
 }
 
 export type Sensitivity = "relaxed" | "balanced" | "strict";

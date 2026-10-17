@@ -1,3 +1,4 @@
+import { describe } from "../i18n";
 import { clamp, mean, median, ramp, round } from "./dsp";
 import type { FaceFrame, SignalResult } from "./types";
 
@@ -46,15 +47,15 @@ export function analyzeJitter(frames: FaceFrame[]): SignalResult {
   const base = { id: "jitter" as const, label: "Face shape stability" };
   const values = frames.map((f) => f.jitter).filter((j) => j > 0 && Number.isFinite(j));
   if (values.length < 30) {
-    return { ...base, suspicion: 0, confidence: 0, detail: "Measuring how steady the face shape is.", metrics: { frames: values.length } };
+    return { ...base, suspicion: 0, confidence: 0, ...describe("detail.jitter.collecting"), metrics: { frames: values.length } };
   }
   const j = median(values) * 1000;
   const motion = mean(frames.map((f) => f.motion));
   const size = mean(frames.map((f) => f.faceWidthPx));
   const suspicion = ramp(j, 8, 18);
   const confidence = clamp(ramp(values.length, 30, 200) * ramp(size, 50, 120) * (1 - ramp(motion, 0.04, 0.12)) * 0.55);
-  const detail = suspicion < 0.35 ? "The face shape stays steady between frames." : "The face shape wobbles between frames more than a real face does.";
-  return { ...base, suspicion, confidence, detail, metrics: { jitterPerMille: round(j) } };
+  const detail = suspicion < 0.35 ? describe("detail.jitter.ok") : describe("detail.jitter.bad");
+  return { ...base, suspicion, confidence, ...detail, metrics: { jitterPerMille: round(j) } };
 }
 
 /**
@@ -71,7 +72,7 @@ export function analyzePose(frames: FaceFrame[]): SignalResult {
       ...base,
       suspicion: 0,
       confidence: 0,
-      detail: maxYaw < 28 ? "Not tested yet. Ask them to turn their head slowly to each side." : "Need a little more footage of the head turned.",
+      ...describe(maxYaw < 28 ? "detail.pose.untested" : "detail.pose.moreFootage"),
       metrics: { maxYaw: Math.round(maxYaw), turnedFrames: turned.length },
     };
   }
@@ -79,7 +80,7 @@ export function analyzePose(frames: FaceFrame[]): SignalResult {
   const ratio = jitterOf(turned) / Math.max(jitterOf(frontal), 1e-6);
   const suspicion = ramp(ratio, 2.2, 4.5);
   const confidence = clamp(ramp(turned.length, 8, 40) * 0.8);
-  const detail = suspicion < 0.35 ? "The face stays consistent when the head turns." : "The face becomes unstable when the head turns, a common weakness of face swaps.";
-  return { ...base, suspicion, confidence, detail, metrics: { turnedToFrontal: round(ratio), maxYaw: Math.round(maxYaw), turnedFrames: turned.length } };
+  const detail = suspicion < 0.35 ? describe("detail.pose.ok") : describe("detail.pose.bad");
+  return { ...base, suspicion, confidence, ...detail, metrics: { turnedToFrontal: round(ratio), maxYaw: Math.round(maxYaw), turnedFrames: turned.length } };
 }
 

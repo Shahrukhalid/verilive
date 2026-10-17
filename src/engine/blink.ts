@@ -1,3 +1,4 @@
+import { describe } from "../i18n";
 import { clamp, mean, ramp, round, std } from "./dsp";
 import type { FaceFrame, SignalResult } from "./types";
 
@@ -48,7 +49,7 @@ export function analyzeBlink(frames: FaceFrame[]): SignalResult {
   const base = { id: "blink" as const, label: "Blinking" };
   const metrics = { count: s.count, perMinute: round(s.perMinute, 1), regularity: round(s.regularity), asymmetry: round(s.asymmetry), duration: round(s.duration, 1) };
   if (s.duration < 15) {
-    return { ...base, suspicion: 0, confidence: 0, detail: "Watching blinks for a little longer.", metrics };
+    return { ...base, suspicion: 0, confidence: 0, ...describe("detail.blink.collecting"), metrics };
   }
   const none = s.count === 0 ? ramp(s.duration, 25, 60) : 0;
   const tooMany = ramp(s.perMinute, 45, 70);
@@ -56,13 +57,13 @@ export function analyzeBlink(frames: FaceFrame[]): SignalResult {
   const oneEyed = ramp(s.asymmetry, 0.08, 0.25);
   const suspicion = clamp(Math.max(none * 0.8, tooMany * 0.6, metronome * 0.75, oneEyed * 0.7));
   const confidence = clamp(ramp(s.duration, 15, 60) * 0.8);
+  const seconds = Math.round(s.duration);
+  const perMinute = Math.round(s.perMinute);
   let detail =
-    s.count === 0
-      ? `No blinks yet in ${Math.round(s.duration)} seconds, which is still within the normal range.`
-      : `${s.count} natural-looking blink${s.count === 1 ? "" : "s"} (${Math.round(s.perMinute)} per minute).`;
-  if (none > 0.3) detail = `No blinks in ${Math.round(s.duration)} seconds. People usually blink every few seconds.`;
-  else if (metronome > 0.5) detail = "Blinks happen at suspiciously regular intervals.";
-  else if (oneEyed > 0.5) detail = "The eyes often close separately, which is unusual for real blinks.";
-  else if (tooMany > 0.5) detail = `Very frequent blinking (${Math.round(s.perMinute)} per minute).`;
-  return { ...base, suspicion, confidence, detail, metrics };
+    s.count === 0 ? describe("detail.blink.noneYet", { seconds }) : describe("detail.blink.natural", { count: s.count, perMinute });
+  if (none > 0.3) detail = describe("detail.blink.none", { seconds });
+  else if (metronome > 0.5) detail = describe("detail.blink.metronome");
+  else if (oneEyed > 0.5) detail = describe("detail.blink.oneEyed");
+  else if (tooMany > 0.5) detail = describe("detail.blink.tooMany", { perMinute });
+  return { ...base, suspicion, confidence, ...detail, metrics };
 }

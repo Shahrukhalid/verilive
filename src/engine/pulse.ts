@@ -1,3 +1,4 @@
+import { describe } from "../i18n";
 import { bandpass, clamp, dominantPeak, mean, pearson, powerSpectrum, ramp, resampleUniform, round, std } from "./dsp";
 import type { FaceFrame, RGB, SignalResult } from "./types";
 
@@ -72,12 +73,12 @@ function averageRgb(...cs: (RGB | null)[]): RGB | null {
  * photos usually lack a clean, consistent pulse, and their regions do not pulse together.
  */
 export function analyzePulse(frames: FaceFrame[]): SignalResult {
-  const base: Omit<SignalResult, "suspicion" | "confidence" | "detail" | "metrics"> = { id: "pulse", label: "Pulse in skin colour" };
+  const base: Omit<SignalResult, "suspicion" | "confidence" | "detail" | "detailKey" | "detailParams" | "metrics"> = { id: "pulse", label: "Pulse in skin colour" };
   const all = regionSeries(frames, (f) => averageRgb(f.forehead, f.leftCheek, f.rightCheek));
   const duration = all.t.length > 1 ? all.t[all.t.length - 1]! - all.t[0]! : 0;
   const fps = duration > 0 ? (all.t.length - 1) / duration : 0;
   if (duration < 5 || fps < 4) {
-    return { ...base, suspicion: 0, confidence: 0, detail: "Collecting a few seconds of skin colour to look for a pulse.", metrics: { duration, fps } };
+    return { ...base, suspicion: 0, confidence: 0, ...describe("detail.pulse.collecting"), metrics: { duration, fps } };
   }
 
   const wave = bandpass(pos(uniformRgb(all), FS), FS, LO_HZ, HI_HZ);
@@ -107,11 +108,7 @@ export function analyzePulse(frames: FaceFrame[]): SignalResult {
 
   const bpm = Math.round(peak.freq * 60);
   const detail =
-    suspicion < 0.35
-      ? `Natural pulse found (about ${bpm} bpm) and the face regions beat together.`
-      : suspicion < 0.65
-        ? `Weak pulse signal. This is common with heavy video compression or poor lighting.`
-        : `No consistent pulse in the skin colour, as seen in replayed or generated faces.`;
-  return { ...base, suspicion, confidence, detail, metrics: { bpm, snrDb: round(snr), coherence: round(coherence), duration: round(duration), fps: round(fps) } };
+    suspicion < 0.35 ? describe("detail.pulse.natural", { bpm }) : suspicion < 0.65 ? describe("detail.pulse.weak") : describe("detail.pulse.none");
+  return { ...base, suspicion, confidence, ...detail, metrics: { bpm, snrDb: round(snr), coherence: round(coherence), duration: round(duration), fps: round(fps) } };
 }
 
