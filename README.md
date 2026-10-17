@@ -6,7 +6,7 @@
 
 **Is the face on your video call real?**
 
-An open-source deepfake check for Zoom, Google Meet, Microsoft Teams and any other video call.<br>
+A free, open-source **deepfake detector for video calls**: Zoom, Google Meet, Microsoft Teams, Webex and more.<br>
 It looks for a pulse in the skin, natural blinking and face-swap artifacts, entirely in your browser.
 
 [![CI](https://github.com/Shahrukhalid/verilive/actions/workflows/ci.yml/badge.svg)](https://github.com/Shahrukhalid/verilive/actions/workflows/ci.yml)
@@ -105,6 +105,23 @@ docs/         how it works, limitations, screenshots
 
 Ideas and research pointers are welcome in [Discussions](https://github.com/Shahrukhalid/verilive/discussions).
 
+## FAQ
+
+**Can I detect a deepfake on a Zoom call for free?**
+Yes. Open [Verilive](https://shahrukhalid.github.io/verilive/), click *Check a live call* and share the Zoom window. It is free and open source, with no account.
+
+**Does it work with Google Meet and Microsoft Teams?**
+Yes. It analyzes whatever call window or browser tab you share, so it works with Meet, Teams, Webex, FaceTime on the web, Skype and others. Nothing is installed into the call app.
+
+**Is my video uploaded anywhere?**
+No. The face model runs in WebAssembly inside your browser tab, and a strict Content Security Policy blocks the page from sending data to any other site.
+
+**How accurate is it?**
+It gives risk signals, not proof. It catches replayed photos and video and common face-swap artifacts. It can be fooled by high-quality deepfakes and confused by heavy compression or beauty filters. See [LIMITATIONS.md](docs/LIMITATIONS.md).
+
+**How is this different from commercial deepfake detectors?**
+Commercial tools for live calls are paid enterprise products. Verilive is free, private, auditable and runs in any desktop browser.
+
 ## Contributing
 
 Pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the [good first issues](https://github.com/Shahrukhalid/verilive/labels/good%20first%20issue). Please follow the [Code of Conduct](CODE_OF_CONDUCT.md) and report security issues privately ([SECURITY.md](SECURITY.md)).
@@ -118,3 +135,5 @@ Face landmarks by Google's [MediaPipe](https://github.com/google-ai-edge/mediapi
 [MIT](LICENSE) © Shahrukhalid
 
 If Verilive helps you or someone you know, please ⭐ star the repo so more people can find it.
+
+Also by the same author: **[STARK OS](https://github.com/Shahrukhalid/stark-os)**, a free, self-hosted AI social media team that asks before it posts.

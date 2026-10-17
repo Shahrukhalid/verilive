@@ -85,8 +85,10 @@ export function analyzePulse(frames: FaceFrame[]): SignalResult {
   const snr = Number.isFinite(peak.snrDb) ? peak.snrDb : -20;
 
   // Do forehead and cheeks pulse together? Real blood flow reaches them almost in sync.
-  const fh = regionSeries(frames, (f) => f.forehead);
-  const ch = regionSeries(frames, (f) => averageRgb(f.leftCheek, f.rightCheek));
+  // Only frames where both regions were measured, so the two waves share one time base.
+  const both = frames.filter((f) => f.forehead && (f.leftCheek || f.rightCheek));
+  const fh = regionSeries(both, (f) => f.forehead);
+  const ch = regionSeries(both, (f) => averageRgb(f.leftCheek, f.rightCheek));
   let coherence = 0;
   if (fh.t.length > FS * 4 && ch.t.length > FS * 4) {
     const a = bandpass(pos(uniformRgb(fh), FS), FS, LO_HZ, HI_HZ);

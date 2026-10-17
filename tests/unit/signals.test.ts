@@ -92,3 +92,12 @@ describe("geometry", () => {
     expect(swap.suspicion).toBeGreaterThan(0.8);
   });
 });
+
+describe("audit regressions", () => {
+  it("pulse coherence is not broken by a forehead gap at the start", () => {
+    const frames = synthFrames({ bpm: 72, seconds: 30 }).map((f) => (f.t < 2 ? { ...f, forehead: null } : f));
+    const r = analyzePulse(frames);
+    expect(r.metrics.coherence).toBeGreaterThan(0.5);
+    expect(r.suspicion).toBeLessThan(0.3);
+  });
+});

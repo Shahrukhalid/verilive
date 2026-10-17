@@ -20,6 +20,8 @@ function readTheme(): Theme {
 export function App() {
   const [scanner, setScanner] = useState<Scanner | null>(null);
   const scannerRef = useRef<Scanner | null>(null);
+  const initRef = useRef<Promise<Scanner> | null>(null);
+  const startingRef = useRef(false);
   const [view, setView] = useState<{ kind: SourceKind; file?: File; stream?: MediaStream; key: number } | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +44,8 @@ export function App() {
   useEffect(() => () => view?.stream?.getTracks().forEach((t) => t.stop()), [view]);
 
   const start = useCallback(async (kind: SourceKind, file?: File) => {
+    if (startingRef.current) return; // a second click while the first start is still running
+    startingRef.current = true;
     setError(null);
     let stream: MediaStream | undefined;
     try {
@@ -50,13 +54,25 @@ export function App() {
       if (kind === "camera") stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
     } catch (e) {
       setError(sourceError(kind, e));
+      startingRef.current = false;
       return;
     }
     try {
       if (!scannerRef.current) {
         setLoading("Loading the face model. The first visit takes a few seconds; after that it is cached.");
-        const s = new Scanner();
-        await s.init(4);
+        // One shared load, however many times people click.
+        initRef.current ??= (async () => {
+          const s = new Scanner();
+          try {
+            await s.init(4);
+          } catch (e) {
+            s.close();
+            initRef.current = null;
+            throw e;
+          }
+          return s;
+        })();
+        const s = await initRef.current;
         scannerRef.current = s;
         setScanner(s);
       }
@@ -66,6 +82,7 @@ export function App() {
       setError(`The face model could not load in this browser: ${(e as Error).message}. Try a recent Chrome, Edge or Firefox.`);
     } finally {
       setLoading(null);
+      startingRef.current = false;
     }
   }, []);
 
@@ -106,7 +123,7 @@ export function App() {
       {view && scanner ? (
         <Session key={view.key} kind={view.kind} file={view.file} stream={view.stream} scanner={scanner} onExit={exit} />
       ) : (
-        <Home onStart={start} error={error} />
+        <Home onStart={start} error={error} busy={!!loading} />
       )}
 
       <footer className="footer">

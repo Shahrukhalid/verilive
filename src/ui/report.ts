@@ -26,7 +26,7 @@ export function buildReport(info: SessionInfo, tracker: FaceTracker) {
     sensitivity: info.sensitivity,
     people: tracker
       .all()
-      .filter(({ analyzer }) => analyzer.latest)
+      .filter(({ analyzer }) => analyzer.latest && (analyzer.latest.level !== "collecting" || analyzer.timeline.length > 0))
       .map(({ id, analyzer }) => {
         const a = analyzer.latest!;
         return {

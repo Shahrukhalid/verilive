@@ -4,7 +4,7 @@ import { ArrowIcon, CameraIcon, CheckIcon, EyeIcon, FileIcon, HeartIcon, LayersI
 
 const canShare = typeof navigator !== "undefined" && !!navigator.mediaDevices?.getDisplayMedia;
 
-export function Home({ onStart, error }: { onStart: (kind: SourceKind, file?: File) => void; error: string | null }) {
+export function Home({ onStart, error, busy = false }: { onStart: (kind: SourceKind, file?: File) => void; error: string | null; busy?: boolean }) {
   return (
     <main>
       <div className="wrap">
@@ -37,7 +37,7 @@ export function Home({ onStart, error }: { onStart: (kind: SourceKind, file?: Fi
             title="Check a live call"
             text={canShare ? "Share the call window. Verilive analyzes the people you can see." : "Needs a desktop browser such as Chrome, Edge or Firefox."}
             cta="Choose call window"
-            disabled={!canShare}
+            disabled={!canShare || busy}
             onClick={() => onStart("screen")}
             testId="start-screen"
           />
@@ -50,6 +50,7 @@ export function Home({ onStart, error }: { onStart: (kind: SourceKind, file?: Fi
               className="sr-only"
               type="file"
               accept="video/*"
+              disabled={busy}
               aria-label="Choose a video file to analyze"
               onChange={(e) => {
                 const f = e.target.files?.[0];
@@ -58,7 +59,7 @@ export function Home({ onStart, error }: { onStart: (kind: SourceKind, file?: Fi
               }}
             />
           </label>
-          <StartCard icon={<CameraIcon />} title="Try it on yourself" text="See how a real face scores using your own camera. Nothing is recorded." cta="Use my camera" onClick={() => onStart("camera")} testId="start-camera" />
+          <StartCard icon={<CameraIcon />} title="Try it on yourself" text="See how a real face scores using your own camera. Nothing is recorded." cta="Use my camera" onClick={() => onStart("camera")} disabled={busy} testId="start-camera" />
         </div>
       </div>
 

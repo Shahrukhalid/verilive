@@ -54,7 +54,8 @@ export class Scanner {
   private searchLevel = 0;
   private crop: CanvasRenderingContext2D;
   private mask: CanvasRenderingContext2D;
-  private prevRigid = new Map<number, Point[]>();
+  private patches: CanvasRenderingContext2D;
+  private prevRigid = new Map<number, { pts: Point[]; t: number }>();
   private prevCenter = new Map<number, { x: number; y: number; t: number }>();
   private lastTs = -1;
   private t0 = -1;
@@ -64,6 +65,7 @@ export class Scanner {
   constructor() {
     this.crop = makeContext();
     this.mask = makeContext();
+    this.patches = makeContext();
     this.work = makeContext();
   }
 
@@ -250,18 +252,27 @@ export class Scanner {
     this.crop.drawImage(video, sx, sy, side, side, 0, 0, CROP, CROP);
     const px = this.crop.getImageData(0, 0, CROP, CROP).data;
 
-    // Rasterize the regions once into a mask: R = face oval, G = inner face, B = skin patches.
+    // Rasterize regions into two masks, one region per colour channel so antialiased edges can
+    // never be mistaken for another region: mask R = face oval, G = inner face; patches R/G/B =
+    // forehead, left cheek, right cheek.
     const m = this.mask;
-    m.globalCompositeOperation = "source-over";
-    m.fillStyle = "#000";
-    m.fillRect(0, 0, CROP, CROP);
-    m.globalCompositeOperation = "lighter";
+    clearMask(m);
     fillPoly(m, FACE_OVAL.map((k) => toCrop(lm[k]!)), "rgb(255,0,0)");
     fillPoly(m, convexHull(INNER_FEATURES.map((k) => toCrop(lm[k]!))), "rgb(0,255,0)");
-    fillPoly(m, shrink(FOREHEAD.map((k) => toCrop(lm[k]!)), 0.8), "rgb(0,0,80)");
-    fillPoly(m, shrink(LEFT_CHEEK.map((k) => toCrop(lm[k]!)), 0.8), "rgb(0,0,160)");
-    fillPoly(m, shrink(RIGHT_CHEEK.map((k) => toCrop(lm[k]!)), 0.8), "rgb(0,0,240)");
     const mk = m.getImageData(0, 0, CROP, CROP).data;
+    const pm = this.patches;
+    clearMask(pm);
+    fillPoly(pm, shrink(FOREHEAD.map((k) => toCrop(lm[k]!)), 0.8), "rgb(255,0,0)");
+    fillPoly(pm, shrink(LEFT_CHEEK.map((k) => toCrop(lm[k]!)), 0.8), "rgb(0,255,0)");
+    fillPoly(pm, shrink(RIGHT_CHEEK.map((k) => toCrop(lm[k]!)), 0.8), "rgb(0,0,255)");
+    const pk = pm.getImageData(0, 0, CROP, CROP).data;
+
+    // Only pixels that come from the video (and whose neighbours do): a face cut off by the frame
+    // edge must not count the empty area beyond it as a sharp edge.
+    const x0 = Math.max(1, Math.ceil((-sx / side) * CROP) + 1);
+    const x1 = Math.min(CROP - 2, Math.floor(((W - sx) / side) * CROP) - 2);
+    const y0 = Math.max(1, Math.ceil((-sy / side) * CROP) + 1);
+    const y1 = Math.min(CROP - 2, Math.floor(((H - sy) / side) * CROP) - 2);
 
     const acc = {
       inLap: 0, inN: 0, outLap: 0, outN: 0,
@@ -270,8 +281,8 @@ export class Scanner {
       roiAll: [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]] as number[][],
     };
     const gray = (i: number) => 0.299 * px[i]! + 0.587 * px[i + 1]! + 0.114 * px[i + 2]!;
-    for (let y = 1; y < CROP - 1; y++) {
-      for (let x = 1; x < CROP - 1; x++) {
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
         const i = (y * CROP + x) * 4;
         const inOval = mk[i]! > 127;
         const inInner = mk[i + 1]! > 127;
@@ -288,9 +299,8 @@ export class Scanner {
             acc.outRGB[0]! += r; acc.outRGB[1]! += g; acc.outRGB[2]! += b;
           }
         }
-        const blue = mk[i + 2]!;
-        if (blue > 40) {
-          const k = blue < 120 ? 0 : blue < 200 ? 1 : 2;
+        const k = pk[i]! > 127 ? 0 : pk[i + 1]! > 127 ? 1 : pk[i + 2]! > 127 ? 2 : -1;
+        if (k >= 0) {
           const all = acc.roiAll[k]!;
           all[0]! += r; all[1]! += g; all[2]! += b; all[3]!++;
           if (isSkin(r, g, b)) {
@@ -314,8 +324,13 @@ export class Scanner {
     // Shape wobble after removing head movement (in pixel units so aspect ratio is right).
     const rigid: Point[] = RIGID.map((k) => [lm[k]!.x * W, lm[k]!.y * H]);
     const prev = this.prevRigid.get(id);
-    const jitter = prev ? rigidResidual(prev, rigid) : 0;
-    this.prevRigid.set(id, rigid);
+    // Compare only with the previous frame; after a detection gap the head may simply have moved.
+    const jitter = prev && t - prev.t <= 0.4 ? rigidResidual(prev.pts, rigid) : 0;
+    this.prevRigid.set(id, { pts: rigid, t });
+    if (this.prevRigid.size > 32) {
+      for (const [k, v] of this.prevRigid) if (t - v.t > 5) this.prevRigid.delete(k);
+      for (const [k, v] of this.prevCenter) if (t - v.t > 5) this.prevCenter.delete(k);
+    }
 
     const center = { x: (box.x + box.w / 2) * W, y: (box.y + box.h / 2) * H, t };
     const pc = this.prevCenter.get(id);
@@ -362,6 +377,13 @@ export function expand(b: Box, W: number, H: number): Box {
   const cx = b.x + b.w / 2;
   const cy = b.y + b.h / 2;
   return { x: Math.min(Math.max(0, cx - w / 2), 1 - w), y: Math.min(Math.max(0, cy - h / 2), 1 - h), w, h };
+}
+
+function clearMask(ctx: CanvasRenderingContext2D): void {
+  ctx.globalCompositeOperation = "source-over";
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, CROP, CROP);
+  ctx.globalCompositeOperation = "lighter";
 }
 
 function fillPoly(ctx: CanvasRenderingContext2D, pts: P[], color: string): void {

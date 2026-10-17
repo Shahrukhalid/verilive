@@ -76,3 +76,28 @@ describe("tracker", () => {
     expect(iou(a, a)).toBe(1);
   });
 });
+
+describe("audit regressions", () => {
+  it("the head-turn check result survives the rolling window", () => {
+    const a = new FaceAnalyzer();
+    const yaw = (t: number) => (t % 6 < 3 ? 0 : 40);
+    const check = synthFrames({ seconds: 12, yaw, jitterAtYaw: (y) => (y > 20 ? 0.03 : 0.005) });
+    for (const f of check) a.push(f, true);
+    for (const f of synthFrames({ seconds: 100, seed: 9 }).map((f) => ({ ...f, t: f.t + 12 }))) a.push(f);
+    const pose = a.assess(112, "balanced").signals.find((s) => s.id === "pose")!;
+    expect(pose.confidence).toBeGreaterThan(0.4);
+    expect(pose.suspicion).toBeGreaterThan(0.8);
+  });
+
+  it("a person who steps away briefly keeps their number; memory of people who left is released", () => {
+    const tr = new FaceTracker();
+    const box = { x: 0.3, y: 0.2, w: 0.2, h: 0.3 };
+    expect(tr.assign([box], 0)).toEqual([1]);
+    expect(tr.assign([box], 10)).toEqual([1]); // back after 10 s
+    const a = tr.analyzer(1)!;
+    a.push(synthFrames({ seconds: 2 })[0]!);
+    tr.assign([], 40); // gone for good
+    expect(tr.all().map((p) => p.id)).toEqual([1]);
+    expect(a.frames.length).toBe(0);
+  });
+});

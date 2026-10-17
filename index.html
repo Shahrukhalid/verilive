@@ -3,19 +3,72 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Verilive · deepfake check for video calls</title>
-    <meta name="description" content="Check if the face on your video call is real. Verilive looks for a pulse, natural blinking and face-swap artifacts, entirely in your browser." />
+    <title>Verilive: free deepfake detector for Zoom, Google Meet and Teams calls</title>
+    <meta name="description" content="Free, open-source deepfake detector for video calls. Verilive checks the face on your Zoom, Google Meet or Microsoft Teams call for a pulse, natural blinking and face-swap artifacts, entirely in your browser. No install, video never leaves your device." />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://shahrukhalid.github.io/verilive/" />
     <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#f5f7fb" media="(prefers-color-scheme: light)" />
-    <meta property="og:title" content="Verilive · deepfake check for video calls" />
-    <meta property="og:description" content="Open-source, in-browser deepfake risk detector for Zoom, Meet and Teams. Your video never leaves your computer." />
+    <meta property="og:site_name" content="Verilive" />
+    <meta property="og:title" content="Verilive: is the face on your video call real?" />
+    <meta property="og:description" content="Free, open-source deepfake check for Zoom, Meet and Teams. Pulse, blink and face-swap signals, in your browser. Video never leaves your device." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://shahrukhalid.github.io/verilive/" />
     <meta property="og:image" content="https://shahrukhalid.github.io/verilive/social-preview.png" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:image:alt" content="Verilive flagging a simulated face swap on a video call" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Verilive: is the face on your video call real?" />
+    <meta name="twitter:description" content="Free, open-source deepfake check for Zoom, Meet and Teams, running entirely in your browser." />
+    <meta name="twitter:image" content="https://shahrukhalid.github.io/verilive/social-preview.png" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Verilive",
+        "url": "https://shahrukhalid.github.io/verilive/",
+        "description": "Free, open-source deepfake risk detector for video calls. Checks faces on Zoom, Google Meet and Microsoft Teams for a pulse, natural blinking and face-swap artifacts, entirely in the browser.",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "Any desktop web browser (Chrome, Edge, Firefox)",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "license": "https://opensource.org/licenses/MIT",
+        "codeRepository": "https://github.com/Shahrukhalid/verilive",
+        "sameAs": ["https://github.com/Shahrukhalid/verilive"],
+        "author": { "@type": "Person", "name": "Shahrukhalid", "url": "https://github.com/Shahrukhalid" },
+        "image": "https://shahrukhalid.github.io/verilive/social-preview.png",
+        "featureList": [
+          "Real-time deepfake risk check for Zoom, Google Meet, Microsoft Teams and Webex",
+          "Pulse detection in skin colour (remote photoplethysmography)",
+          "Blink analysis and face-swap artifact detection",
+          "Guided head-turn liveness test",
+          "Runs fully in the browser; video never leaves the device"
+        ]
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Shown until the app starts (and to search engines and browsers without JavaScript). -->
+      <main class="seo-fallback">
+        <h1>Verilive: free deepfake detector for video calls</h1>
+        <p>
+          Is the face on your Zoom, Google Meet or Microsoft Teams call real? Verilive is a free, open-source deepfake check
+          that runs entirely in your web browser. It looks for a pulse in the skin, natural blinking and the tells of a face
+          swap, and gives each person on the call a risk reading. Your video never leaves your computer.
+        </p>
+        <h2>How it works</h2>
+        <ul>
+          <li>Share the call window, open a recording, or test yourself with your camera.</li>
+          <li>Six signals: pulse in skin colour, blinking, face sharpness match, colour flicker, face shape stability and a guided head-turn test.</li>
+          <li>Each person gets a verdict: looks real, some warning signs, or likely synthetic.</li>
+        </ul>
+        <p><a href="https://github.com/Shahrukhalid/verilive">Source code on GitHub</a> (MIT licence).</p>
+      </main>
+    </div>
     <noscript>Verilive needs JavaScript to analyze video in your browser.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>

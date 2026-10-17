@@ -38,7 +38,8 @@ export class FaceAnalyzer {
     if (this.last && now - this.lastEval < every) return this.last;
     this.lastEval = now;
     const f = this.frames;
-    const poseFrames = this.checkFrames.length > f.length ? this.checkFrames : f;
+    // The guided head-turn check is kept beyond the rolling window, so its result never expires.
+    const poseFrames = this.checkFrames.length ? mergeByTime(this.checkFrames, f) : f;
     const result = combine(
       [analyzePulse(f), analyzePose(poseFrames), analyzeTexture(f), analyzeBlink(f), analyzeFlicker(f), analyzeJitter(f)],
       sensitivity,
@@ -52,6 +53,18 @@ export class FaceAnalyzer {
   get latest(): Assessment | null {
     return this.last;
   }
+
+  /** Frees the per-frame history once a person has left for good. */
+  release(): void {
+    this.frames.length = 0;
+    this.checkFrames.length = 0;
+  }
+}
+
+/** Merges two time-ordered frame lists, dropping duplicates (frames recorded in both). */
+export function mergeByTime(a: FaceFrame[], b: FaceFrame[]): FaceFrame[] {
+  const all = [...a, ...b].sort((x, y) => x.t - y.t);
+  return all.filter((f, i) => i === 0 || f.t !== all[i - 1]!.t);
 }
 
 export interface Box {
@@ -78,7 +91,8 @@ export class FaceTracker {
   private retired: Track[] = [];
   private nextId = 1;
 
-  constructor(private readonly forgetAfter = 3) {}
+  /** A person who is out of view for up to `forgetAfter` seconds keeps the same number and history. */
+  constructor(private readonly forgetAfter = 20) {}
 
   /** Returns the track id for each box, in the same order. */
   assign(boxes: Box[], t: number): number[] {
@@ -104,7 +118,11 @@ export class FaceTracker {
       return best.id;
     });
     const keep = (tr: Track) => t - tr.lastSeen <= this.forgetAfter || used.has(tr.id);
-    this.retired.push(...this.tracks.filter((tr) => !keep(tr)));
+    for (const tr of this.tracks.filter((x) => !keep(x))) {
+      tr.analyzer.release(); // keep the verdict and timeline for the report, drop the raw frames
+      this.retired.push(tr);
+    }
+    if (this.retired.length > 50) this.retired.splice(0, this.retired.length - 50);
     this.tracks = this.tracks.filter(keep);
     return ids;
   }
