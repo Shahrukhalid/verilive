@@ -1,0 +1,23 @@
+name: Wrong result (false alarm or missed fake)
+description: Verilive flagged a real person, or missed a deepfake
+labels: [accuracy]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What went wrong?
+      options: [A real person was flagged, A fake was rated "Looks real"]
+    validations:
+      required: true
+  - type: textarea
+    id: conditions
+    attributes:
+      label: Conditions
+      description: Lighting, connection quality, filters or virtual background, face size, how long you checked. For fakes, which tool made it, if known.
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Saved report
+      description: Attach the report JSON from "Save report" (numbers only). Please do not upload videos of real people without their consent.
