@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Scanner } from "../vision/scanner";
 import { Home } from "./Home";
 import { GithubIcon, Logo, SunMoonIcon } from "./icons";
+import type { Translate } from "../i18n";
+import { I18nProvider, useI18n } from "../i18n/react";
 import { APP_VERSION, type SourceKind } from "./report";
 import { Session } from "./Session";
 
@@ -18,6 +20,15 @@ function readTheme(): Theme {
 }
 
 export function App() {
+  return (
+    <I18nProvider>
+      <AppShell />
+    </I18nProvider>
+  );
+}
+
+function AppShell() {
+  const { t } = useI18n();
   const [scanner, setScanner] = useState<Scanner | null>(null);
   const scannerRef = useRef<Scanner | null>(null);
   const initRef = useRef<Promise<Scanner> | null>(null);
@@ -53,13 +64,13 @@ export function App() {
       if (kind === "screen") stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30 } }, audio: false });
       if (kind === "camera") stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
     } catch (e) {
-      setError(sourceError(kind, e));
+      setError(sourceError(kind, e, t));
       startingRef.current = false;
       return;
     }
     try {
       if (!scannerRef.current) {
-        setLoading("Loading the face model. The first visit takes a few seconds; after that it is cached.");
+        setLoading(t("app.loadingModel"));
         // One shared load, however many times people click.
         initRef.current ??= (async () => {
           const s = new Scanner();
@@ -79,12 +90,12 @@ export function App() {
       setView({ kind, file, stream, key: Date.now() });
     } catch (e) {
       stream?.getTracks().forEach((t) => t.stop());
-      setError(`The face model could not load in this browser: ${(e as Error).message}. Try a recent Chrome, Edge or Firefox.`);
+      setError(t("app.modelError", { message: (e as Error).message }));
     } finally {
       setLoading(null);
       startingRef.current = false;
     }
-  }, []);
+  }, [t]);
 
   const exit = useCallback((message?: string) => {
     setView(null);
@@ -92,22 +103,23 @@ export function App() {
   }, []);
 
   const nextTheme: Record<Theme, Theme> = { system: "dark", dark: "light", light: "system" };
+  const themeName = t(`theme.${theme}`);
 
   return (
     <div className="shell">
       <header className="topbar">
         <div className="wrap">
-          <button className="brand" onClick={() => setView(null)} aria-label="Verilive home">
+          <button className="brand" onClick={() => setView(null)} aria-label={t("app.homeLabel")}>
             <Logo />
             <span className="brand-name">Verilive</span>
-            <span className="brand-tag">deepfake check</span>
+            <span className="brand-tag">{t("app.brandTag")}</span>
           </button>
           <span className="spacer" />
-          <button className="iconbtn" onClick={() => setTheme(nextTheme[theme])} aria-label={`Theme: ${theme}. Switch theme`} title={`Theme: ${theme}`}>
-            <SunMoonIcon /> <span className="hide-sm">{theme === "system" ? "Auto" : theme === "dark" ? "Dark" : "Light"}</span>
+          <button className="iconbtn" onClick={() => setTheme(nextTheme[theme])} aria-label={t("app.themeSwitch", { theme: themeName })} title={t("app.themeTitle", { theme: themeName })}>
+            <SunMoonIcon /> <span className="hide-sm">{themeName}</span>
           </button>
           <a className="iconbtn" href={REPO} target="_blank" rel="noopener noreferrer">
-            <GithubIcon /> <span className="hide-sm">Star on GitHub</span>
+            <GithubIcon /> <span className="hide-sm">{t("app.star")}</span>
           </a>
         </div>
       </header>
@@ -128,11 +140,11 @@ export function App() {
 
       <footer className="footer">
         <div className="wrap">
-          <span>Verilive {APP_VERSION} · MIT licensed · Risk signals, not proof.</span>
+          <span>{t("footer.summary", { version: APP_VERSION })}</span>
           <span>
-            <a href={`${REPO}#how-it-works`} target="_blank" rel="noopener noreferrer">How it works</a> ·{" "}
-            <a href={`${REPO}/blob/main/docs/LIMITATIONS.md`} target="_blank" rel="noopener noreferrer">Limitations</a> ·{" "}
-            <a href={`${REPO}/issues`} target="_blank" rel="noopener noreferrer">Report a problem</a>
+            <a href={`${REPO}#how-it-works`} target="_blank" rel="noopener noreferrer">{t("footer.how")}</a> ·{" "}
+            <a href={`${REPO}/blob/main/docs/LIMITATIONS.md`} target="_blank" rel="noopener noreferrer">{t("footer.limits")}</a> ·{" "}
+            <a href={`${REPO}/issues`} target="_blank" rel="noopener noreferrer">{t("footer.report")}</a>
           </span>
         </div>
       </footer>
@@ -140,14 +152,10 @@ export function App() {
   );
 }
 
-function sourceError(kind: SourceKind, e: unknown): string {
+function sourceError(kind: SourceKind, e: unknown, t: Translate): string {
   const name = (e as DOMException)?.name;
-  if (name === "NotAllowedError" || name === "AbortError") {
-    return kind === "camera"
-      ? "Camera access was blocked. Allow it from the browser's address bar and try again."
-      : "Screen sharing was cancelled. Click \"Check a live call\" again and pick the call window.";
-  }
-  if (name === "NotFoundError") return "No camera was found on this device.";
-  if (name === "NotReadableError") return "The camera is busy in another app. Close it there and try again.";
-  return `Could not start: ${(e as Error)?.message ?? String(e)}`;
+  if (name === "NotAllowedError" || name === "AbortError") return kind === "camera" ? t("error.cameraBlocked") : t("error.screenCancelled");
+  if (name === "NotFoundError") return t("error.noCamera");
+  if (name === "NotReadableError") return t("error.cameraBusy");
+  return t("error.startFailed", { message: (e as Error)?.message ?? String(e) });
 }

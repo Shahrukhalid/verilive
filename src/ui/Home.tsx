@@ -1,26 +1,25 @@
 import type { ReactNode } from "react";
+import { useI18n } from "../i18n/react";
 import type { SourceKind } from "./report";
 import { ArrowIcon, CameraIcon, CheckIcon, EyeIcon, FileIcon, HeartIcon, LayersIcon, LockIcon, ScreenIcon, TurnIcon, WaveIcon } from "./icons";
 
 const canShare = typeof navigator !== "undefined" && !!navigator.mediaDevices?.getDisplayMedia;
 
 export function Home({ onStart, error, busy = false }: { onStart: (kind: SourceKind, file?: File) => void; error: string | null; busy?: boolean }) {
+  const { t } = useI18n();
   return (
     <main>
       <div className="wrap">
         <section className="hero">
-          <span className="eyebrow">Open-source deepfake check</span>
+          <span className="eyebrow">{t("home.eyebrow")}</span>
           <h1>
-            Is the face on your call <em>really there?</em>
+            {t("home.titleLead")} <em>{t("home.titleEmphasis")}</em>
           </h1>
-          <p className="lead">
-            Verilive watches a Zoom, Google Meet or Teams call and looks for the tells of a face swap: no pulse in the skin,
-            unnatural blinking, and a face that breaks apart when the head turns. Everything runs in this browser tab.
-          </p>
+          <p className="lead">{t("home.lead")}</p>
           <div className="trust">
-            <span><CheckIcon /> Video never leaves your computer</span>
-            <span><CheckIcon /> No account, no install</span>
-            <span><CheckIcon /> Free and open source (MIT)</span>
+            <span><CheckIcon /> {t("home.trust.private")}</span>
+            <span><CheckIcon /> {t("home.trust.noAccount")}</span>
+            <span><CheckIcon /> {t("home.trust.free")}</span>
           </div>
         </section>
 
@@ -34,24 +33,24 @@ export function Home({ onStart, error, busy = false }: { onStart: (kind: SourceK
           <StartCard
             primary
             icon={<ScreenIcon />}
-            title="Check a live call"
-            text={canShare ? "Share the call window. Verilive analyzes the people you can see." : "Needs a desktop browser such as Chrome, Edge or Firefox."}
-            cta="Choose call window"
+            title={t("home.screen.title")}
+            text={canShare ? t("home.screen.text") : t("home.screen.unsupported")}
+            cta={t("home.screen.cta")}
             disabled={!canShare || busy}
             onClick={() => onStart("screen")}
             testId="start-screen"
           />
           <label className="start" data-testid="start-file">
             <span className="ico"><FileIcon /></span>
-            <h2>Analyze a recording</h2>
-            <p>Open a video file of a call or a clip someone sent you. It stays on this device.</p>
-            <span className="go">Choose video file <ArrowIcon width={16} /></span>
+            <h2>{t("home.file.title")}</h2>
+            <p>{t("home.file.text")}</p>
+            <span className="go">{t("home.file.cta")} <ArrowIcon width={16} /></span>
             <input
               className="sr-only"
               type="file"
               accept="video/*"
               disabled={busy}
-              aria-label="Choose a video file to analyze"
+              aria-label={t("home.file.aria")}
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) onStart("file", f);
@@ -59,17 +58,17 @@ export function Home({ onStart, error, busy = false }: { onStart: (kind: SourceK
               }}
             />
           </label>
-          <StartCard icon={<CameraIcon />} title="Try it on yourself" text="See how a real face scores using your own camera. Nothing is recorded." cta="Use my camera" onClick={() => onStart("camera")} disabled={busy} testId="start-camera" />
+          <StartCard icon={<CameraIcon />} title={t("home.camera.title")} text={t("home.camera.text")} cta={t("home.camera.cta")} onClick={() => onStart("camera")} disabled={busy} testId="start-camera" />
         </div>
       </div>
 
       <section className="section">
         <div className="wrap">
-          <h2>How to check a call</h2>
+          <h2>{t("home.how.title")}</h2>
           <div className="grid3">
-            <Step n="01" title="Start the call as usual">Use the Zoom, Teams or Webex app, or Meet in your browser. Spotlight or pin the person you want to check.</Step>
-            <Step n="02" title="Share the call window here">Click "Check a live call" and pick the call window. Verilive only reads the picture; it cannot see anything else.</Step>
-            <Step n="03" title="Watch the verdict">After about 15 seconds each person gets a reading. For a stronger test, ask them to turn their head slowly to each side.</Step>
+            <Step n="01" title={t("home.step1.title")}>{t("home.step1.text")}</Step>
+            <Step n="02" title={t("home.step2.title")}>{t("home.step2.text")}</Step>
+            <Step n="03" title={t("home.step3.title")}>{t("home.step3.text")}</Step>
           </div>
         </div>
       </section>
@@ -77,23 +76,22 @@ export function Home({ onStart, error, busy = false }: { onStart: (kind: SourceK
       <section className="section">
         <div className="wrap grid2">
           <div>
-            <h2>What it looks for</h2>
+            <h2>{t("home.tells.title")}</h2>
             <div className="tells">
-              <Tell icon={<HeartIcon />} title="A heartbeat in the skin">Real skin changes colour very slightly with every heartbeat. Replayed and generated faces rarely do.</Tell>
-              <Tell icon={<EyeIcon />} title="Natural blinking">People blink irregularly, with both eyes, several times a minute.</Tell>
-              <Tell icon={<LayersIcon />} title="A pasted-on face">Swapped faces are often softer than the skin around them and flicker in colour.</Tell>
-              <Tell icon={<WaveIcon />} title="Shape stability">The geometry of a real face moves smoothly. Swaps tend to shimmer.</Tell>
-              <Tell icon={<TurnIcon />} title="The head-turn test">Face swaps are built from front-facing photos and break down when the head turns.</Tell>
+              <Tell icon={<HeartIcon />} title={t("home.tell.pulse.title")}>{t("home.tell.pulse.text")}</Tell>
+              <Tell icon={<EyeIcon />} title={t("home.tell.blink.title")}>{t("home.tell.blink.text")}</Tell>
+              <Tell icon={<LayersIcon />} title={t("home.tell.paste.title")}>{t("home.tell.paste.text")}</Tell>
+              <Tell icon={<WaveIcon />} title={t("home.tell.shape.title")}>{t("home.tell.shape.text")}</Tell>
+              <Tell icon={<TurnIcon />} title={t("home.tell.turn.title")}>{t("home.tell.turn.text")}</Tell>
             </div>
           </div>
           <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
             <div className="card">
-              <h3><LockIcon width={18} style={{ verticalAlign: "-3px", marginRight: 6 }} />Private by design</h3>
-              <p>The face model and all analysis run inside this page. No video, images or audio are uploaded, and the page has no server to send them to.</p>
+              <h3><LockIcon width={18} style={{ verticalAlign: "-3px", marginRight: 6 }} />{t("home.privacy.title")}</h3>
+              <p>{t("home.privacy.text")}</p>
             </div>
             <div className="note">
-              <b>Signals, not proof.</b> Bad lighting, heavy compression or beauty filters can make a real person look suspicious, and new
-              deepfakes may pass. If a call asks for money, passwords or urgent action, verify the person another way, whatever the score says.
+              <b>{t("home.note.lead")}</b> {t("home.note.text")}
             </div>
           </div>
         </div>
