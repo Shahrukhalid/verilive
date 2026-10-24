@@ -26,23 +26,40 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      deploy: ${{ steps.same.outputs.deploy }}
     steps:
+      # Check out main itself (trusted), then build it only if it is exactly the commit CI just passed.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - id: same
+        env:
+          EVENT: ${{ github.event_name }}
+          CI_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ "$EVENT" = "workflow_run" ] && [ "$(git rev-parse HEAD)" != "$CI_SHA" ]; then
+            echo "main has moved on since this CI run; the newer commit's CI run will deploy it."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.same.outputs.deploy == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22  # no dependency cache here, so nothing cached can be poisoned before a deploy
-      - run: npm ci
-      - run: npm run build
+      - if: steps.same.outputs.deploy == 'true'
+        run: npm ci
+      - if: steps.same.outputs.deploy == 'true'
+        run: npm run build
         env:
           VERILIVE_BASE: /verilive/
-      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+      - if: steps.same.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist
 
   deploy:
     needs: build
+    if: needs.build.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     # Only this job can publish the site; the build job (which runs npm install scripts) cannot.
     permissions:
