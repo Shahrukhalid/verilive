@@ -8,3 +8,4 @@ tests/e2e/fixtures/local/
 *.log
 .env
 docs/demo-raw/
+evaluation-report.*
