@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Head-turn test no longer reports a strong "face swap" reading when the head-on frames have no measured shape wobble (missing data was divided by a near-zero value).
+- Session timer and the report's duration exclude paused time and stop when the recording or screen share ends.
+- Resuming a recording no longer leaves an unhandled promise rejection when the browser refuses to play; the session returns to paused.
+- Frame-loop cleanup cancels the right callback type and removes the screen-share track listener.
+- Signal resampling no longer throws when timestamps do not increase.
+- The build fails if the Content Security Policy cannot be injected; the dev server now blocks requests to other origins (`connect-src 'self'`), including MediaPipe's usage metrics.
+- Lint rules now also apply to `scripts/*.mjs`.
+
 ## 1.0.0 (2026-10-17)
 
 First public release.

@@ -114,7 +114,7 @@ Yes. Open [Verilive](https://shahrukhalid.github.io/verilive/), click *Check a l
 Yes. It analyzes whatever call window or browser tab you share, so it works with Meet, Teams, Webex, FaceTime on the web, Skype and others. Nothing is installed into the call app.
 
 **Is my video uploaded anywhere?**
-No. The face model runs in WebAssembly inside your browser tab, and a strict Content Security Policy blocks the page from sending data to any other site.
+No. The face model runs in WebAssembly inside your browser tab, and a strict Content Security Policy blocks the page from sending data to any other site. That includes the usage metrics the MediaPipe library would otherwise try to send to Google (they never contain images); see [SECURITY.md](SECURITY.md).
 
 **How accurate is it?**
 It gives risk signals, not proof. It catches replayed photos and video and common face-swap artifacts. It can be fooled by high-quality deepfakes and confused by heavy compression or beauty filters. See [LIMITATIONS.md](docs/LIMITATIONS.md).
