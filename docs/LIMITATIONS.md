@@ -19,9 +19,21 @@ Verilive gives **risk signals, not proof**. Please read this before relying on i
 
 ## What it does not check
 
-- **Voice.** Cloned voices are a major part of call scams. Verilive does not analyze audio yet.
+- **Voice, beyond an experiment.** Cloned voices are a major part of call scams. Verilive has only an off-by-default, unvalidated "voice signal" (see below). It is not a voice-clone detector, it needs shared tab audio, and it never feeds the face verdict.
 - **Identity.** It does not know who someone is. A real person can still be a scammer.
 - **Screen content** other than faces.
+
+## The experimental voice signal
+
+Settings has "Experimental: voice signal" (off by default). It is a hint, not a detector.
+
+- **Unvalidated.** Its thresholds are starting points chosen from the usual behaviour of vocoders, tested only on synthetic signals. It has not been run on real calls or real voice clones, so a reading can be wrong in both directions.
+- **Calls change the audio.** Codecs, noise suppression and gain control remove or imitate the traits it looks for. A low-bitrate call can look "synthetic" and a good clone can look normal.
+- **Real voices trigger it too.** Cheap microphones, call filters, voice changers, very monotone speakers, and band-limited streams can show "synthetic-like" traits.
+- **One mixed stream.** It cannot tell speakers apart, and your own voice or notification sounds may be in the mix.
+- **Chromium and tab audio only.** Chrome and Edge can share a tab's audio; Firefox and Safari cannot. You must tick "Share tab audio", and the setting must be on before you share. Camera and file sessions are not analyzed.
+- **Needs speech.** It says nothing until about eight seconds of voiced speech have been heard.
+- It never changes the face-based risk level or the main score. The saved report adds an `experimental.voice` object of numbers only.
 
 ## Calibration
 

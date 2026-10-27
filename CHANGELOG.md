@@ -6,7 +6,7 @@
 - Person cards show a live pulse waveform (the last six seconds) once the pulse can be measured; it respects reduced-motion settings.
 - Picture-in-picture button (browsers with the Document Picture-in-Picture API) floats each person's verdict over the call.
 - `npm run evaluate` runs the engine over a folder of labelled videos and reports accuracy, precision, recall and per-signal statistics; see `docs/EVALUATION.md`.
-- Research notes on an on-device voice-clone signal (no detector shipped): `docs/research/VOICE_CLONE_SIGNAL.md`.
+- Experimental, off-by-default "voice signal" (setting "Experimental: voice signal"): when a shared tab carries audio, an AudioWorklet measures spectral flatness, rolloff, high-band energy, spectral flux, pitch and level steadiness on the device and shows a separate "Voice (experimental)" reading. Unvalidated; it never changes the face verdict or main score, and audio is never recorded or sent. Reports gain an `experimental.voice` object of numbers when it is on. Research notes: `docs/research/VOICE_CLONE_SIGNAL.md`.
 - Head-turn test no longer reports a strong "face swap" reading when the head-on frames have no measured shape wobble (missing data was divided by a near-zero value).
 - Session timer and the report's duration exclude paused time and stop when the recording or screen share ends.
 - Resuming a recording no longer leaves an unhandled promise rejection when the browser refuses to play; the session returns to paused.
