@@ -24,7 +24,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build && npm run e2e"
+    "check": "npm run lint && npm run typecheck && npm test && npm run build && npm run e2e",
+    "evaluate": "node scripts/evaluate.mjs"
   },
   "dependencies": {
     "@fontsource-variable/onest": "5.3.1",
