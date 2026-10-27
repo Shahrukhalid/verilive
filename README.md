@@ -32,6 +32,8 @@ Video-call deepfakes are now used to impersonate executives, relatives and job c
 - **Several people at once**, each with a risk gauge, evidence meter, plain-language reasons and a risk timeline.
 - **Finds small faces.** In gallery view Verilive zooms in automatically, or you can drag a box around a person.
 - **Analyze recordings** of calls or clips someone sent you, and **try it on yourself** with your camera.
+- **Floating verdict.** Pop the live verdict out into a small picture-in-picture window that stays on top of the call (Chrome and Edge).
+- **Nine languages:** English, Filipino, Spanish, French, German, Portuguese, Indonesian, Chinese and Japanese. Each person card also shows a live pulse waveform.
 - **Reports.** Save a JSON report (numbers only, never images) or copy a summary.
 - **Private by design.** The face model and all analysis run in WebAssembly in your tab. A strict Content Security Policy blocks every other origin, and there is no server.
 - Light and dark themes, keyboard and screen-reader friendly, works on desktop browsers.
@@ -68,7 +70,7 @@ Details, formulas and thresholds: **[docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md)
 
 ## Honest limitations
 
-Verilive gives **risk signals, not proof**. Heavy compression, beauty filters and bad lighting can make a real person look suspicious, and the best deepfakes may pass. It does not analyze voices yet. Thresholds were set from research and simulations, not a large benchmark. Read **[docs/LIMITATIONS.md](docs/LIMITATIONS.md)**, and if a call asks for money, codes or urgent action, verify the person another way, whatever the score says.
+Verilive gives **risk signals, not proof**. Heavy compression, beauty filters and bad lighting can make a real person look suspicious, and the best deepfakes may pass. It does not analyze voices yet (see [research notes](docs/research/VOICE_CLONE_SIGNAL.md)). Thresholds were set from research and simulations, not a large benchmark. Read **[docs/LIMITATIONS.md](docs/LIMITATIONS.md)**, and if a call asks for money, codes or urgent action, verify the person another way, whatever the score says.
 
 ## Run it yourself
 
@@ -84,6 +86,7 @@ npm run dev        # http://localhost:5173
 ```bash
 npm test           # detector unit tests
 npm run e2e        # the real app in Chromium on generated test videos
+npm run evaluate -- <folder>   # accuracy on your own labelled videos (docs/EVALUATION.md)
 ```
 
 ## Project layout
@@ -93,13 +96,12 @@ src/engine/   detectors and scoring (pure TypeScript, unit-tested)
 src/vision/   face landmarks, pixel measurements, small-face search
 src/ui/       React interface
 tests/        unit tests (synthetic signals) and end-to-end tests (generated videos)
-docs/         how it works, limitations, screenshots
+docs/         how it works, limitations, translating, evaluation, research notes, screenshots
 ```
 
 ## Roadmap
 
 - Voice-clone detection on shared tab audio
-- Picture-in-picture mini verdict that floats over the call
 - Evaluation on public deepfake datasets and published accuracy numbers
 - Optional opt-in ONNX classifier for frame-level artifacts
 

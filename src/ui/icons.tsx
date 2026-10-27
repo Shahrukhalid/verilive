@@ -34,3 +34,4 @@ export const CopyIcon = (p: P) => (<svg {...base} {...p}><rect x="9" y="9" width
 export const SettingsIcon = (p: P) => (<svg {...base} {...p}><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></svg>);
 export const ArrowIcon = (p: P) => (<svg {...base} {...p}><path d="M5 12h14m-5-5 5 5-5 5" /></svg>);
 export const CheckIcon = (p: P) => (<svg {...base} {...p}><path d="m5 12 5 5 9-10" /></svg>);
+export const PipIcon = (p: P) => (<svg {...base} {...p}><rect x="3" y="4" width="18" height="16" rx="2" /><rect x="12" y="12" width="7" height="5" rx="1" /></svg>);

@@ -26,7 +26,7 @@ video frame ──► face landmarks (478 points, blink scores, head pose)
 | Face shape stability | artifacts | Rigid landmarks (eye corners, nose bridge, chin) move as one | Shape shimmers between frames | Residual after a 2-D similarity (Procrustes) fit between consecutive frames (`src/engine/geometry.ts`) |
 | Head-turn test | artifacts | Stays stable when the head turns | Swaps trained on frontal faces break down at 30°+ yaw | Shape residual at large yaw vs. frontal frames, recorded during the guided check |
 
-Each signal returns a **suspicion** (0 natural to 1 synthetic), a **confidence** (how much evidence it has: footage length, frame rate, face size, head motion) and a plain-language sentence.
+Each signal returns a **suspicion** (0 natural to 1 synthetic), a **confidence** (how much evidence it has: footage length, frame rate, face size, head motion) and a plain-language sentence. The sentence is built with `describe(key, params)` (`src/i18n`), so it carries both its English text and a translation key (see [Languages](#languages)).
 
 ## From signals to a verdict
 
@@ -49,9 +49,27 @@ The face model works on a downscaled frame, so small faces (a 3×3 gallery, a th
 
 Analysis runs at up to about 20 frames per second on the main thread using WebAssembly (CPU). The face model (≈3.7 MB) and runtime (≈13 MB) load once and are cached by the browser. Keep the Verilive tab visible next to the call; browsers slow down hidden tabs.
 
+## Languages
+
+The interface follows the browser's language. English is the default; Filipino, Spanish, French, German, Portuguese, Indonesian, Chinese (Simplified) and Japanese are also included. There is no i18n library, only a few small files in `src/i18n/`, each with one job:
+
+```
+navigator.languages ──► detect.ts ──► locale ──► translate.ts ──► text on screen
+                        (picks a supported      (looks up a key in that language's
+                         language, else "en")    dictionary, fills {placeholders},
+                                                 picks plural forms)
+                                    locales/*.ts: one dictionary per language
+```
+
+- **Detection** takes the first language in the browser's preference list that Verilive supports and ignores the region (`es-MX` gives Spanish). `tl` is read as Filipino and `in` as Indonesian. Anything else gives English.
+- **Fallback** never breaks the page: a key missing from a language shows the English text, and a key missing everywhere shows the key itself.
+- **What is translated:** all UI text, the four risk levels (title and advice), the signal names, the detectors' sentences and the summary you copy. The detectors do not know about languages: each returns the English `detail` plus a `detailKey` and `detailParams`, and the interface translates those when it shows them. The detection maths is untouched.
+- **The saved JSON report stays in English** so it has one stable format for other tools. It also records each sentence's `detailKey` and `detailParams`, and `reasonIds` pointing at the signals behind the top reasons.
+- **Adding a language** takes one new dictionary file and one line in `src/i18n/locales/index.ts`. TypeScript and the unit tests flag any missing key or mismatched placeholder. See [TRANSLATING.md](TRANSLATING.md).
+
 ## Testing
 
-- `tests/unit`: the signal processing and every detector against deterministic synthetic data (living face, frozen photo, face swap, metronome blinking, head-turn breakdown).
+- `tests/unit`: the signal processing and every detector against deterministic synthetic data (living face, frozen photo, face swap, metronome blinking, head-turn breakdown), and the translation layer (`i18n.test.ts`: every language has the same keys and placeholders as English, language detection, fallback, plurals, the English report versus the translated summary).
 - `tests/e2e`: the real app in Chromium on generated videos made from NASA's public-domain portrait of Eileen Collins: a still photo held up to a camera, the same photo with a simulated 72 bpm pulse, a simulated face swap (softened, re-tinted inner face), and a small face that requires auto-zoom. `scripts/make-fixtures.py` regenerates them.
 
 The thresholds were set from these simulations and published research, not from a large benchmark. See [LIMITATIONS.md](LIMITATIONS.md).

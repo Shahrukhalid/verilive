@@ -97,3 +97,36 @@ test("works on a phone-sized screen without sideways scrolling", async ({ page }
   const width = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(width).toBeLessThanOrEqual(376);
 });
+
+test("a live pulse waveform appears once the pulse can be measured", async ({ page }) => {
+  await analyzeFile(page, "pulse-sim.webm");
+  const card = page.getByTestId("person-1");
+  await expect(card.locator("figure.pulsewave svg path")).toBeVisible({ timeout: 60_000 });
+  await expect(card.getByRole("img", { name: /pulse waveform/i })).toBeVisible();
+});
+
+test("picture-in-picture button is shown only where the browser supports it", async ({ page }) => {
+  await analyzeFile(page, "pulse-sim.webm");
+  const supported = await page.evaluate(() => "documentPictureInPicture" in window);
+  await expect(page.getByTestId("pip-toggle")).toHaveCount(supported ? 1 : 0);
+});
+
+test("picture-in-picture shows each person's verdict and closes cleanly", async ({ page }) => {
+  // Stand-in for the browser API, which needs a real window manager: a same-origin popup behaves alike.
+  await page.addInitScript(() => {
+    (window as unknown as { documentPictureInPicture: unknown }).documentPictureInPicture = {
+      requestWindow: async () => window.open("about:blank", "pip", "popup,width=300,height=220")!,
+    };
+  });
+  await analyzeFile(page, "pulse-sim.webm");
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByTestId("pip-toggle").click();
+  const pip = await popupPromise;
+  await expect(pip.getByTestId("pip-view")).toBeVisible();
+  await expect(pip.getByText("Person 1")).toBeVisible();
+  await expect(pip.locator(".pip-row .level")).toHaveText(/\S+/, { timeout: 30_000 });
+  await expect(pip.getByText("Keep this tab open")).toBeVisible();
+  await pip.getByRole("button", { name: "Close picture-in-picture" }).click();
+  await expect.poll(() => pip.isClosed()).toBe(true);
+  await expect(page.getByTestId("pip-toggle")).toHaveAttribute("aria-pressed", "false");
+});
