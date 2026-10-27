@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Box, TimelinePoint } from "../engine/analyzer";
-import { LEVEL_TEXT } from "../engine/scoring";
 import type { Assessment, Sensitivity } from "../engine/types";
+import { useI18n } from "../i18n/react";
 import type { ScannedFace, Scanner } from "../vision/scanner";
 import { LEVEL_COLOR, PersonCard } from "./PersonCard";
 import { buildReport, summaryText, type SourceKind } from "./report";
@@ -19,6 +19,7 @@ const FRAME_INTERVAL_MS = 45; // up to ~20 analyses per second, limited by the v
 const CHECK_SECONDS = 12;
 
 export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceKind; file?: File; stream?: MediaStream; scanner: Scanner; onExit: (error?: string) => void }) {
+  const { t } = useI18n();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const latest = useRef<ScannedFace[]>([]);
@@ -32,7 +33,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
     c.since = null;
   };
   const [status, setStatus] = useState<Status>("starting");
-  const [label, setLabel] = useState(kind === "file" ? file?.name ?? "Video file" : kind === "camera" ? "Your camera" : "Shared window");
+  const [label, setLabel] = useState(kind === "file" ? file?.name ?? t("session.source.file") : kind === "camera" ? t("session.source.camera") : t("session.source.screen"));
   const [people, setPeople] = useState<Person[]>([]);
   const [facesNow, setFacesNow] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -67,7 +68,8 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
     };
     scanner.reset();
 
-    const draw = () => drawOverlay(canvasRef.current, video, overlayRef.current ? latest.current : [], zoomRef.current.region);
+    const faceLabel = (f: ScannedFace) => t("session.overlayLabel", { id: f.id, title: t(`level.${f.assessment.level}.title`) });
+    const draw = () => drawOverlay(canvasRef.current, video, overlayRef.current ? latest.current : [], zoomRef.current.region, faceLabel);
     const tick = () => {
       if (stopped) return;
       const now = performance.now();
@@ -117,9 +119,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
         if (stopped) return;
         const err = e as DOMException;
         const message =
-          kind === "file"
-            ? "This video could not be played. Try an MP4 or WebM file, or another browser."
-            : `Could not start the video: ${err?.message ?? String(e)}`;
+          kind === "file" ? t("session.error.file") : t("session.error.video", { message: err?.message ?? String(e) });
         onExit(message);
       }
     })();
@@ -139,7 +139,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
       video.removeAttribute("src");
       video.srcObject = null;
     };
-  }, [kind, file, stream, scanner, onExit]);
+  }, [kind, file, stream, scanner, onExit, t]);
 
   // Refresh the side panel a few times per second (cheaper than on every frame).
   useEffect(() => {
@@ -165,7 +165,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
   }, [scanner, sensitivity]);
 
   useEffect(() => {
-    if (!overlay) drawOverlay(canvasRef.current, videoRef.current, [], zoomRef.current.region);
+    if (!overlay) drawOverlay(canvasRef.current, videoRef.current, [], zoomRef.current.region, () => "");
   }, [overlay]);
 
   const setRegion = (region: Box | null) => {
@@ -201,7 +201,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
     const b = boxFrom(start, p);
     if (b.w > 0.06 && b.h > 0.06) {
       setRegion(b);
-      flash("Analyzing the selected area");
+      flash(t("session.toast.region"));
     }
   };
 
@@ -270,15 +270,15 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
     a.download = `verilive-report-${startedAt.current.toISOString().slice(0, 19).replace(/[:T]/g, "-")}.json`;
     a.click();
     window.setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    flash("Report saved");
+    flash(t("session.toast.saved"));
   };
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(summaryText(report()));
-      flash("Summary copied");
+      await navigator.clipboard.writeText(summaryText(report(), t));
+      flash(t("session.toast.copied"));
     } catch {
-      flash("Copy is blocked in this browser");
+      flash(t("session.toast.copyBlocked"));
     }
   };
 
@@ -291,7 +291,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
         <div className="toolbar">
           <span className={`live${status === "running" ? "" : " paused"}`} data-testid="status">
             <i />
-            {status === "starting" ? "Starting" : status === "running" ? "Analyzing" : status === "paused" ? "Paused" : "Finished"} · {fmtTime(elapsed)}
+            {t(status === "starting" ? "session.status.starting" : status === "running" ? "session.status.running" : status === "paused" ? "session.status.paused" : "session.status.ended")} · {fmtTime(elapsed)}
           </span>
           <span className="muted" style={{ fontSize: 14, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 260 }} title={label}>
             {label}
@@ -300,39 +300,39 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
           {!ended && (
             <button className="btn" onClick={togglePause} disabled={status === "starting"}>
               {status === "paused" ? <PlayIcon /> : <PauseIcon />}
-              <span className="hide-sm">{status === "paused" ? "Resume" : "Pause"}</span>
+              <span className="hide-sm">{status === "paused" ? t("session.resume") : t("session.pause")}</span>
             </button>
           )}
           <div className="rel">
-            <button className="btn" onClick={() => setShowSettings((s) => !s)} aria-expanded={showSettings} aria-label="Settings">
+            <button className="btn" onClick={() => setShowSettings((s) => !s)} aria-expanded={showSettings} aria-label={t("session.settings")}>
               <SettingsIcon />
             </button>
             {showSettings && (
               <div className="card popover">
                 <div className="field">
-                  <label id="sens-label">Sensitivity</label>
+                  <label id="sens-label">{t("session.sensitivity")}</label>
                   <div className="seg" role="group" aria-labelledby="sens-label">
                     {(["relaxed", "balanced", "strict"] as const).map((s) => (
                       <button key={s} aria-pressed={sensitivity === s} onClick={() => setSensitivity(s)}>
-                        {s[0]!.toUpperCase() + s.slice(1)}
+                        {t(`session.sensitivity.${s}`)}
                       </button>
                     ))}
                   </div>
-                  <span className="muted" style={{ fontSize: 13 }}>Strict flags sooner but has more false alarms.</span>
+                  <span className="muted" style={{ fontSize: 13 }}>{t("session.sensitivityHint")}</span>
                 </div>
                 <label className="field" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <input type="checkbox" checked={overlay} onChange={(e) => setOverlay(e.target.checked)} /> Show face boxes on the video
+                  <input type="checkbox" checked={overlay} onChange={(e) => setOverlay(e.target.checked)} /> {t("session.showBoxes")}
                 </label>
               </div>
             )}
           </div>
           <button className="btn btn-danger" onClick={() => onExit()}>
-            <StopIcon /> <span className="hide-sm">End</span>
+            <StopIcon /> <span className="hide-sm">{t("session.end")}</span>
           </button>
         </div>
 
         <div className="stage">
-          <video ref={videoRef} aria-label="Video being analyzed" />
+          <video ref={videoRef} aria-label={t("session.videoAria")} />
           <canvas
             ref={canvasRef}
             aria-hidden="true"
@@ -345,46 +345,46 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
           {status !== "starting" && facesNow === 0 && !ended && (
             <div className="empty" data-testid="no-face">
               <div>
-                <b>Looking for a face</b>
-                <span>Make sure the call window shows someone's video, not just their name. Spotlight or pin the person for the best result.</span>
+                <b>{t("session.noFace.title")}</b>
+                <span>{t("session.noFace.text")}</span>
               </div>
             </div>
           )}
           {status === "starting" && (
             <div className="empty">
-              <span className="loading"><span className="spinner" /> Starting video</span>
+              <span className="loading"><span className="spinner" /> {t("session.startingVideo")}</span>
             </div>
           )}
         </div>
         <div className="under">
           {zoom.region ? (
             <span data-testid="zoom">
-              {zoom.auto ? "Zoomed in automatically on a small face." : "Analyzing the area you selected."}{" "}
-              <button className="linkbtn" onClick={() => setRegion(null)}>Use whole video</button>
+              {zoom.auto ? t("session.zoom.auto") : t("session.zoom.manual")}{" "}
+              <button className="linkbtn" onClick={() => setRegion(null)}>{t("session.zoom.reset")}</button>
             </span>
           ) : (
-            <span>Tip: drag a box around a person to focus on them.</span>
+            <span>{t("session.zoom.tip")}</span>
           )}
-          <span>{facesNow} face{facesNow === 1 ? "" : "s"} in view</span>
-          <span>Processed on this device</span>
-          {hidden && <span style={{ color: "var(--warn)" }}>Keep this tab visible (put it next to the call) so analysis keeps running.</span>}
+          <span>{t("session.faces", { count: facesNow })}</span>
+          <span>{t("session.local")}</span>
+          {hidden && <span style={{ color: "var(--warn)" }}>{t("session.hidden")}</span>}
         </div>
         {ended && (
           <div className="card" style={{ marginTop: 14 }} role="status">
-            <h3>{kind === "file" ? "Recording finished" : "Sharing stopped"}</h3>
-            <p className="muted" style={{ marginTop: 4 }}>The results below are final for this session. Save a report if you need a record.</p>
+            <h3>{kind === "file" ? t("session.ended.file") : t("session.ended.share")}</h3>
+            <p className="muted" style={{ marginTop: 4 }}>{t("session.ended.text")}</p>
           </div>
         )}
       </div>
 
-      <aside className="side" aria-label="Results">
+      <aside className="side" aria-label={t("session.results")}>
         <div aria-live="polite" className="sr-only">
-          {worst && worst.assessment.level !== "collecting" ? `Person ${worst.id}: ${LEVEL_TEXT[worst.assessment.level].title}` : ""}
+          {worst && worst.assessment.level !== "collecting" ? t("session.announce", { id: worst.id, title: t(`level.${worst.assessment.level}.title`) }) : ""}
         </div>
         {people.length === 0 && (
           <div className="card">
-            <div className="panel-title">Results</div>
-            <p className="muted">Each person on screen gets a card here once their face is found.</p>
+            <div className="panel-title">{t("session.results")}</div>
+            <p className="muted">{t("session.results.empty")}</p>
           </div>
         )}
         {people.map((p) => (
@@ -392,39 +392,39 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
         ))}
 
         <div className="card check">
-          <div className="panel-title">Head-turn check</div>
+          <div className="panel-title">{t("check.title")}</div>
           {checkLeft === null ? (
             <>
               <ol>
-                <li>Ask them: "Could you slowly turn your head to the left, then to the right?"</li>
-                <li>Press start while they do it.</li>
+                <li>{t("check.step1")}</li>
+                <li>{t("check.step2")}</li>
               </ol>
               <button className="btn btn-primary" onClick={startCheck} disabled={ended || status !== "running"} data-testid="start-check">
-                <TurnIcon /> Start {CHECK_SECONDS}-second check
+                <TurnIcon /> {t("check.start", { seconds: CHECK_SECONDS })}
               </button>
-              {checkDone && <p className="muted" style={{ fontSize: 14 }}>Done. The head-turn result is in each person's signals.</p>}
+              {checkDone && <p className="muted" style={{ fontSize: 14 }}>{t("check.done")}</p>}
             </>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <span className="count" aria-live="polite">{checkLeft}</span>
-              <span className="muted">Recording the head turn. Keep the face in view.</span>
+              <span className="muted">{t("check.recording")}</span>
             </div>
           )}
         </div>
 
         <div className="card">
-          <div className="panel-title">Verify another way</div>
+          <div className="panel-title">{t("verify.title")}</div>
           <ul className="tips">
-            <li>Hang up and call back on a number you already have.</li>
-            <li>Ask something only the real person would know.</li>
-            <li>Ask them to wave a hand slowly in front of their face.</li>
-            <li>Never move money or share codes because of a video call alone.</li>
+            <li>{t("verify.tip1")}</li>
+            <li>{t("verify.tip2")}</li>
+            <li>{t("verify.tip3")}</li>
+            <li>{t("verify.tip4")}</li>
           </ul>
         </div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button className="btn" onClick={download} disabled={!people.length}><DownloadIcon /> Save report</button>
-          <button className="btn" onClick={copy} disabled={!people.length}><CopyIcon /> Copy summary</button>
+          <button className="btn" onClick={download} disabled={!people.length}><DownloadIcon /> {t("session.save")}</button>
+          <button className="btn" onClick={copy} disabled={!people.length}><CopyIcon /> {t("session.copy")}</button>
         </div>
       </aside>
       {toast && <div className="toast" role="status">{toast}</div>}
@@ -442,7 +442,7 @@ function fmtTime(s: number): string {
 }
 
 /** Draws a box and a label for each face, matching the letterboxed video position. */
-function drawOverlay(canvas: HTMLCanvasElement | null, video: HTMLVideoElement | null, faces: ScannedFace[], region: Box | null): void {
+function drawOverlay(canvas: HTMLCanvasElement | null, video: HTMLVideoElement | null, faces: ScannedFace[], region: Box | null, labelOf: (face: ScannedFace) => string): void {
   if (!canvas || !video) return;
   const dpr = window.devicePixelRatio || 1;
   const cw = canvas.clientWidth;
@@ -487,7 +487,7 @@ function drawOverlay(canvas: HTMLCanvasElement | null, video: HTMLVideoElement |
       ctx.arc(ox + p.x * vw * scale, oy + p.y * vh * scale, 1.8, 0, Math.PI * 2);
       ctx.fill();
     }
-    const text = `Person ${f.id} · ${LEVEL_TEXT[f.assessment.level].title}`;
+    const text = labelOf(f);
     ctx.font = "600 13px Onest Variable, system-ui, sans-serif";
     const tw = ctx.measureText(text).width + 16;
     const ty = Math.max(0, y - 26);
