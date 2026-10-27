@@ -24,6 +24,13 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
   const latest = useRef<ScannedFace[]>([]);
   const paused = useRef(false);
   const startedAt = useRef(new Date());
+  // Active analysis time: excludes time spent paused and stops counting once the session ends.
+  const clock = useRef({ activeMs: 0, since: null as number | null });
+  const stopClock = () => {
+    const c = clock.current;
+    if (c.since !== null) c.activeMs += performance.now() - c.since;
+    c.since = null;
+  };
   const [status, setStatus] = useState<Status>("starting");
   const [label, setLabel] = useState(kind === "file" ? file?.name ?? "Video file" : kind === "camera" ? "Your camera" : "Shared window");
   const [people, setPeople] = useState<Person[]>([]);
@@ -52,6 +59,12 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
     let stopped = false;
     let last = 0;
     let handle = 0;
+    let usesVideoFrames = false;
+    let track: MediaStreamTrack | undefined;
+    const onTrackEnded = () => {
+      stopClock();
+      setStatus("ended");
+    };
     scanner.reset();
 
     const draw = () => drawOverlay(canvasRef.current, video, overlayRef.current ? latest.current : [], zoomRef.current.region);
@@ -74,7 +87,8 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
     };
     const schedule = () => {
       if (stopped) return;
-      if ("requestVideoFrameCallback" in video) handle = video.requestVideoFrameCallback(() => tick());
+      usesVideoFrames = "requestVideoFrameCallback" in video;
+      if (usesVideoFrames) handle = video.requestVideoFrameCallback(() => tick());
       else handle = requestAnimationFrame(tick);
     };
 
@@ -84,10 +98,10 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
           url = URL.createObjectURL(file);
           video.src = url;
         } else if (stream) {
-          const track = stream.getVideoTracks()[0];
+          track = stream.getVideoTracks()[0];
           if (track) {
             if (kind === "screen" && track.label) setLabel(track.label);
-            track.addEventListener("ended", () => setStatus("ended"));
+            track.addEventListener("ended", onTrackEnded);
           }
           video.srcObject = stream;
         }
@@ -96,6 +110,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
         await video.play();
         if (stopped) return;
         startedAt.current = new Date();
+        clock.current = { activeMs: 0, since: performance.now() };
         setStatus("running");
         schedule();
       } catch (e) {
@@ -109,12 +124,16 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
       }
     })();
 
-    const onEnded = () => setStatus("ended");
+    const onEnded = () => {
+      stopClock();
+      setStatus("ended");
+    };
     video.addEventListener("ended", onEnded);
     return () => {
       stopped = true;
-      if ("cancelVideoFrameCallback" in video) video.cancelVideoFrameCallback(handle);
-      cancelAnimationFrame(handle);
+      if (usesVideoFrames) video.cancelVideoFrameCallback(handle);
+      else cancelAnimationFrame(handle);
+      track?.removeEventListener("ended", onTrackEnded);
       video.removeEventListener("ended", onEnded);
       if (url) URL.revokeObjectURL(url);
       video.removeAttribute("src");
@@ -125,7 +144,8 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
   // Refresh the side panel a few times per second (cheaper than on every frame).
   useEffect(() => {
     const id = window.setInterval(() => {
-      const t = (Date.now() - startedAt.current.getTime()) / 1000;
+      const c = clock.current;
+      const t = (c.activeMs + (c.since !== null ? performance.now() - c.since : 0)) / 1000;
       const onScreen = new Set(latest.current.map((f) => f.id));
       setFacesNow(latest.current.length);
       setPeople(
@@ -134,7 +154,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
           .filter((p) => p.analyzer.latest)
           .map((p) => ({ id: p.id, assessment: p.analyzer.latest!, timeline: [...p.analyzer.timeline], onScreen: onScreen.has(p.id) })),
       );
-      if (!paused.current) setElapsed(t);
+      setElapsed(t);
       setHidden(document.hidden);
     }, 400);
     return () => window.clearInterval(id);
@@ -213,8 +233,19 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
 
   const togglePause = () => {
     paused.current = !paused.current;
+    if (paused.current) stopClock();
+    else clock.current.since = performance.now();
     const v = videoRef.current;
-    if (kind === "file" && v) void (paused.current ? v.pause() : v.play());
+    if (kind === "file" && v) {
+      if (paused.current) v.pause();
+      // play() can reject (e.g. the browser blocks playback); go back to paused instead of an unhandled rejection.
+      else
+        v.play().catch(() => {
+          paused.current = true;
+          stopClock();
+          setStatus("paused");
+        });
+    }
     setStatus(paused.current ? "paused" : "running");
   };
 
