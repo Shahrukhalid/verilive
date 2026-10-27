@@ -194,3 +194,17 @@ details.signals summary::-webkit-details-marker { display: none; }
 .linkbtn { border: 0; background: none; padding: 0; color: var(--brand); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; }
 .dragrect { position: absolute; border: 2px dashed #fff; background: rgb(124 156 255 / 0.15); border-radius: 6px; pointer-events: none; }
 .seo-fallback { max-width: 760px; margin: 0 auto; padding: 48px 20px; }
+
+.pulsewave { margin: 0; display: grid; gap: 2px; }
+.pulsewave figcaption { font-size: 12px; color: var(--ink-2); }
+.pulsewave svg { width: 100%; height: 40px; display: block; }
+
+.pip-body { margin: 0; background: var(--bg); color: var(--ink); }
+.pip { padding: 10px 12px; display: grid; gap: 8px; font-size: 14px; }
+.pip-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.pip-row { display: grid; grid-template-columns: 10px 1fr auto auto; align-items: center; gap: 8px; }
+.pip-dot { width: 10px; height: 10px; border-radius: 50%; display: block; }
+.pip-name { font-weight: 600; }
+.pip-risk { font: 500 12px var(--mono); color: var(--ink-2); }
+.pip-note { font-size: 12px; }
+.pip-close { justify-self: start; }
