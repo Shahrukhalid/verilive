@@ -186,4 +186,19 @@ export const fil: Dictionary = {
   "summary.header": "Pagsusuri ng Verilive · {date} · {minutes} min · {source}",
   "summary.none": "Walang mukhang nasuri.",
   "summary.person": "Tao {id}: {verdict} (panganib {risk}%, ebidensya {evidence}%)",
+
+  // Experimental voice signal
+  "voice.setting.label": "Eksperimental: signal ng boses",
+  "voice.setting.hint": "Hindi pa napatutunayang eksperimento. Kapag nag-share ka ng browser tab na may tsek ang \"Share tab audio\", susukatin ng Verilive ang ilang katangian ng boses na karaniwan sa synthetic na pananalita. Maaari itong magkamali sa magkabilang panig at hindi nito binabago ang hatol sa mukha. Sa device na ito sinusuri ang audio; hindi ito nire-record o ipinapadala. Magkakabisa ito sa susunod mong pag-share ng tab.",
+  "voice.title": "Boses (eksperimental)",
+  "voice.caveat": "Hindi pa napatutunayang eksperimento. Hindi nito binabago ang hatol sa mukha, at maaaring magpakita rin ng mga katangiang ito ang totoong boses.",
+  "voice.state.unavailable": "Hindi available para sa source na ito. Kailangan ng voice check ang shared na browser tab kasama ang audio nito.",
+  "voice.state.noAudio": "Hindi nakikinig: walang na-share na tab audio. Tapusin ang session, mag-share ng browser tab, at lagyan ng tsek ang \"Share tab audio\".",
+  "voice.state.error": "Hindi makapagsimulang makinig sa browser na ito.",
+  "voice.state.listening": "Nakikinig. Kulang pa ang narinig na pananalita para makapagsabi ng anuman ({seconds} s ang narinig).",
+  "voice.state.low": "Walang kakaiba sa mga boses na narinig sa ngayon.",
+  "voice.state.some": "May ilang katangiang makikita sa synthetic na boses, gaya ng napakapantay na tono o kawalan ng matataas na frequency. Dulot din ito ng mahinang mikropono at ng mga filter ng tawag. Ituring lang itong palatandaan.",
+  "voice.score": "Mga katangiang parang synthetic · {percent}%",
+  "voice.heard": "Narinig na pananalita: {seconds} s",
+  "voice.meterAria": "Bahagi ng mga katangiang makikita sa synthetic na boses",
 };
