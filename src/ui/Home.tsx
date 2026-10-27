@@ -5,7 +5,7 @@ import { ArrowIcon, CameraIcon, CheckIcon, EyeIcon, FileIcon, HeartIcon, LayersI
 
 const canShare = typeof navigator !== "undefined" && !!navigator.mediaDevices?.getDisplayMedia;
 
-export function Home({ onStart, error, busy = false }: { onStart: (kind: SourceKind, file?: File) => void; error: string | null; busy?: boolean }) {
+export function Home({ onStart, error, busy = false, voice, onVoiceChange }: { onStart: (kind: SourceKind, file?: File) => void; error: string | null; busy?: boolean; voice: boolean; onVoiceChange: (on: boolean) => void }) {
   const { t } = useI18n();
   return (
     <main>
@@ -59,6 +59,12 @@ export function Home({ onStart, error, busy = false }: { onStart: (kind: SourceK
             />
           </label>
           <StartCard icon={<CameraIcon />} title={t("home.camera.title")} text={t("home.camera.text")} cta={t("home.camera.cta")} onClick={() => onStart("camera")} disabled={busy} testId="start-camera" />
+        </div>
+        <div className="field" style={{ marginTop: 16, maxWidth: 720 }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input type="checkbox" checked={voice} onChange={(e) => onVoiceChange(e.target.checked)} data-testid="voice-toggle" /> {t("voice.setting.label")}
+          </label>
+          <span className="muted" style={{ fontSize: 13 }}>{t("voice.setting.hint")}</span>
         </div>
       </div>
 
