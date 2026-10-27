@@ -34,6 +34,11 @@ describe("dsp", () => {
     out.forEach((x, i) => expect(x).toBeCloseTo(2 * (i / 10), 9));
   });
 
+  it("resampling returns nothing (instead of throwing) when time does not move forward", () => {
+    expect(resampleUniform([1, 0.5, 0], [1, 2, 3], 10)).toEqual([]);
+    expect(resampleUniform([2, 2], [1, 2], 10)).toEqual([]);
+  });
+
   it("detrends, correlates and ramps", () => {
     expect(Math.max(...detrend([1, 2, 3, 4]).map(Math.abs))).toBeLessThan(1e-9);
     expect(pearson([1, 2, 3, 4], [2, 4, 6, 8])).toBeCloseTo(1, 9);

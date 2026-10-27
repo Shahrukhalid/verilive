@@ -78,6 +78,7 @@ export function resampleUniform(t: number[], v: number[], fs: number): number[] 
   if (n < 2) return [];
   const t0 = t[0]!;
   const t1 = t[n - 1]!;
+  if (!(t1 > t0)) return []; // times must increase; a negative span would make an invalid array length
   const count = Math.floor((t1 - t0) * fs) + 1;
   const out = new Array<number>(count);
   let j = 0;
