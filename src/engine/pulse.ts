@@ -7,6 +7,9 @@ const LO_HZ = 0.7;
 const HI_HZ = 3.0;
 const FS = 15;
 
+/** Seconds of band-passed waveform kept for the live display. */
+export const WAVE_SECONDS = 6;
+
 /**
  * Plane-Orthogonal-to-Skin (POS) remote pulse extraction (Wang et al., 2017).
  * Input: uniformly sampled RGB means of a skin region. Output: pulse waveform.
@@ -73,12 +76,17 @@ function averageRgb(...cs: (RGB | null)[]): RGB | null {
  * photos usually lack a clean, consistent pulse, and their regions do not pulse together.
  */
 export function analyzePulse(frames: FaceFrame[]): SignalResult {
+  return analyzePulseWithWave(frames).result;
+}
+
+/** Same as `analyzePulse`, plus the last few seconds of the waveform it already computed (no extra work). */
+export function analyzePulseWithWave(frames: FaceFrame[]): { result: SignalResult; wave: number[] } {
   const base: Omit<SignalResult, "suspicion" | "confidence" | "detail" | "detailKey" | "detailParams" | "metrics"> = { id: "pulse", label: "Pulse in skin colour" };
   const all = regionSeries(frames, (f) => averageRgb(f.forehead, f.leftCheek, f.rightCheek));
   const duration = all.t.length > 1 ? all.t[all.t.length - 1]! - all.t[0]! : 0;
   const fps = duration > 0 ? (all.t.length - 1) / duration : 0;
   if (duration < 5 || fps < 4) {
-    return { ...base, suspicion: 0, confidence: 0, ...describe("detail.pulse.collecting"), metrics: { duration, fps } };
+    return { result: { ...base, suspicion: 0, confidence: 0, ...describe("detail.pulse.collecting"), metrics: { duration, fps } }, wave: [] };
   }
 
   const wave = bandpass(pos(uniformRgb(all), FS), FS, LO_HZ, HI_HZ);
@@ -109,6 +117,7 @@ export function analyzePulse(frames: FaceFrame[]): SignalResult {
   const bpm = Math.round(peak.freq * 60);
   const detail =
     suspicion < 0.35 ? describe("detail.pulse.natural", { bpm }) : suspicion < 0.65 ? describe("detail.pulse.weak") : describe("detail.pulse.none");
-  return { ...base, suspicion, confidence, ...detail, metrics: { bpm, snrDb: round(snr), coherence: round(coherence), duration: round(duration), fps: round(fps) } };
+  const result: SignalResult = { ...base, suspicion, confidence, ...detail, metrics: { bpm, snrDb: round(snr), coherence: round(coherence), duration: round(duration), fps: round(fps) } };
+  return { result, wave: wave.slice(-WAVE_SECONDS * FS) };
 }
 
