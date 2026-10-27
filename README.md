@@ -32,6 +32,8 @@ Video-call deepfakes are now used to impersonate executives, relatives and job c
 - **Several people at once**, each with a risk gauge, evidence meter, plain-language reasons and a risk timeline.
 - **Finds small faces.** In gallery view Verilive zooms in automatically, or you can drag a box around a person.
 - **Analyze recordings** of calls or clips someone sent you, and **try it on yourself** with your camera.
+- **Floating verdict.** Pop the live verdict out into a small picture-in-picture window that stays on top of the call (Chrome and Edge).
+- **Nine languages:** English, Filipino, Spanish, French, German, Portuguese, Indonesian, Chinese and Japanese. Each person card also shows a live pulse waveform.
 - **Reports.** Save a JSON report (numbers only, never images) or copy a summary.
 - **Private by design.** The face model and all analysis run in WebAssembly in your tab. A strict Content Security Policy blocks every other origin, and there is no server.
 - Light and dark themes, keyboard and screen-reader friendly, works on desktop browsers.
@@ -84,6 +86,7 @@ npm run dev        # http://localhost:5173
 ```bash
 npm test           # detector unit tests
 npm run e2e        # the real app in Chromium on generated test videos
+npm run evaluate -- <folder>   # accuracy on your own labelled videos (docs/EVALUATION.md)
 ```
 
 ## Project layout
@@ -99,7 +102,6 @@ docs/         how it works, limitations, translating, evaluation, research notes
 ## Roadmap
 
 - Voice-clone detection on shared tab audio
-- Picture-in-picture mini verdict that floats over the call
 - Evaluation on public deepfake datasets and published accuracy numbers
 - Optional opt-in ONNX classifier for frame-level artifacts
 
