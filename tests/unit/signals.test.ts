@@ -94,6 +94,14 @@ describe("geometry", () => {
 });
 
 describe("audit regressions", () => {
+  it("head-turn test does not flag a face when frontal frames have no measured wobble", () => {
+    const yaw = (t: number) => (t % 10 < 5 ? 0 : 40);
+    // Jitter is 0 when it could not be measured (e.g. right after a detection gap).
+    const r = analyzePose(synthFrames({ yaw, jitterAtYaw: (y) => (y > 20 ? 0.008 : 0) }));
+    expect(r.confidence).toBe(0);
+    expect(r.suspicion).toBe(0);
+  });
+
   it("pulse coherence is not broken by a forehead gap at the start", () => {
     const frames = synthFrames({ bpm: 72, seconds: 30 }).map((f) => (f.t < 2 ? { ...f, forehead: null } : f));
     const r = analyzePulse(frames);

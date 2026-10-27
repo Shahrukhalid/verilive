@@ -75,11 +75,18 @@ export function analyzePose(frames: FaceFrame[]): SignalResult {
       metrics: { maxYaw: Math.round(maxYaw), turnedFrames: turned.length },
     };
   }
-  const jitterOf = (fs: FaceFrame[]) => median(fs.map((f) => f.jitter).filter((j) => j > 0));
-  const ratio = jitterOf(turned) / Math.max(jitterOf(frontal), 1e-6);
+  // Only frames with a measured wobble (jitter is 0 for the first frame after a gap). Without
+  // enough of them on both sides there is nothing to compare: dividing by a near-zero frontal
+  // value would otherwise turn missing data into a strong "face swap" reading.
+  const valid = (fs: FaceFrame[]) => fs.map((f) => f.jitter).filter((j) => j > 0 && Number.isFinite(j));
+  const turnedJ = valid(turned);
+  const frontalJ = valid(frontal);
+  if (frontalJ.length < 10 || turnedJ.length < 5) {
+    return { ...base, suspicion: 0, confidence: 0, detail: "Need a little more footage of the head turned.", metrics: { maxYaw: Math.round(maxYaw), turnedFrames: turned.length } };
+  }
+  const ratio = median(turnedJ) / Math.max(median(frontalJ), 1e-6);
   const suspicion = ramp(ratio, 2.2, 4.5);
   const confidence = clamp(ramp(turned.length, 8, 40) * 0.8);
   const detail = suspicion < 0.35 ? "The face stays consistent when the head turns." : "The face becomes unstable when the head turns, a common weakness of face swaps.";
   return { ...base, suspicion, confidence, detail, metrics: { turnedToFrontal: round(ratio), maxYaw: Math.round(maxYaw), turnedFrames: turned.length } };
 }
-
