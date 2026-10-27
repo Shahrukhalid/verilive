@@ -195,4 +195,19 @@ export const en = {
   "summary.header": "Verilive check · {date} · {minutes} min · {source}",
   "summary.none": "No faces were analyzed.",
   "summary.person": "Person {id}: {verdict} (risk {risk}%, evidence {evidence}%)",
+
+  // Experimental voice signal
+  "voice.setting.label": "Experimental: voice signal",
+  "voice.setting.hint": "Unvalidated experiment. When you share a browser tab with \"Share tab audio\" ticked, Verilive measures a few traits of the voice that are common in synthetic speech. It can be wrong in both directions and never changes the face verdict. The audio is analyzed on this device, never recorded or sent. Takes effect the next time you share a tab.",
+  "voice.title": "Voice (experimental)",
+  "voice.caveat": "Unvalidated experiment. It does not change the face verdict, and a real voice can show these traits too.",
+  "voice.state.unavailable": "Not available for this source. The voice check needs a shared browser tab with its audio.",
+  "voice.state.noAudio": "Not listening: no tab audio was shared. End the session, then share a browser tab and tick \"Share tab audio\".",
+  "voice.state.error": "Could not start listening in this browser.",
+  "voice.state.listening": "Listening. Not enough speech yet to say anything ({seconds} s heard).",
+  "voice.state.low": "Nothing unusual in the voices heard so far.",
+  "voice.state.some": "Some traits seen in synthetic voices, such as very even pitch or no high frequencies. Poor microphones and call filters cause these too. Treat it as a hint only.",
+  "voice.score": "Synthetic-like traits · {percent}%",
+  "voice.heard": "Speech heard: {seconds} s",
+  "voice.meterAria": "Share of traits seen in synthetic voices",
 } as const;

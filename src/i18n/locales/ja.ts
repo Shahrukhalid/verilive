@@ -186,4 +186,19 @@ export const ja: Dictionary = {
   "summary.header": "Verilive チェック · {date} · {minutes} 分 · {source}",
   "summary.none": "分析された顔はありませんでした。",
   "summary.person": "人物 {id}: {verdict} (リスク {risk}%、根拠 {evidence}%)",
+
+  // Experimental voice signal
+  "voice.setting.label": "実験的: 音声シグナル",
+  "voice.setting.hint": "未検証の実験機能です。「タブの音声を共有」にチェックを入れてブラウザのタブを共有すると、合成音声によく見られる声の特徴をいくつか測定します。どちらの方向にも誤ることがあり、顔の判定は変わりません。音声はこの端末上で分析され、録音も送信もされません。次にタブを共有したときから有効になります。",
+  "voice.title": "音声（実験的）",
+  "voice.caveat": "未検証の実験機能です。顔の判定は変わらず、本物の声でもこれらの特徴が出ることがあります。",
+  "voice.state.unavailable": "このソースでは利用できません。音声チェックには、音声付きで共有されたブラウザのタブが必要です。",
+  "voice.state.noAudio": "聞き取っていません: タブの音声が共有されていません。セッションを終了し、ブラウザのタブを共有して「タブの音声を共有」にチェックを入れてください。",
+  "voice.state.error": "このブラウザでは聞き取りを開始できませんでした。",
+  "voice.state.listening": "聞き取り中です。まだ音声が足りず、判断できません（{seconds} 秒分を聞き取り済み）。",
+  "voice.state.low": "ここまでに聞いた声に、特に変わった点はありません。",
+  "voice.state.some": "音の高さが非常に一定、高い周波数がないなど、合成音声に見られる特徴がいくつかあります。質の悪いマイクや通話フィルターでも起こります。参考程度にしてください。",
+  "voice.score": "合成音声に似た特徴 · {percent}%",
+  "voice.heard": "聞き取った音声: {seconds} 秒",
+  "voice.meterAria": "合成音声に見られる特徴の割合",
 };

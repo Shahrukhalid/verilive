@@ -186,4 +186,19 @@ export const pt: Dictionary = {
   "summary.header": "Verificação do Verilive · {date} · {minutes} min · {source}",
   "summary.none": "Nenhum rosto foi analisado.",
   "summary.person": "Pessoa {id}: {verdict} (risco {risk}%, evidência {evidence}%)",
+
+  // Experimental voice signal
+  "voice.setting.label": "Experimental: sinal de voz",
+  "voice.setting.hint": "Experimento não validado. Quando você compartilha uma aba do navegador com \"Compartilhar áudio da aba\" marcado, o Verilive mede alguns traços da voz comuns na fala sintética. Ele pode errar nos dois sentidos e nunca altera o veredito do rosto. O áudio é analisado neste dispositivo e nunca é gravado nem enviado. Vale a partir da próxima vez que você compartilhar uma aba.",
+  "voice.title": "Voz (experimental)",
+  "voice.caveat": "Experimento não validado. Não altera o veredito do rosto, e uma voz real também pode apresentar esses traços.",
+  "voice.state.unavailable": "Indisponível para esta fonte. A verificação de voz precisa de uma aba do navegador compartilhada com o áudio.",
+  "voice.state.noAudio": "Não está ouvindo: o áudio da aba não foi compartilhado. Encerre a sessão, compartilhe uma aba do navegador e marque \"Compartilhar áudio da aba\".",
+  "voice.state.error": "Não foi possível começar a ouvir neste navegador.",
+  "voice.state.listening": "Ouvindo. Ainda não há fala suficiente para dizer algo ({seconds} s ouvidos).",
+  "voice.state.low": "Nada incomum nas vozes ouvidas até agora.",
+  "voice.state.some": "Alguns traços vistos em vozes sintéticas, como tom muito uniforme ou ausência de frequências agudas. Microfones ruins e filtros de chamada também os causam. Considere apenas uma pista.",
+  "voice.score": "Traços de voz sintética · {percent}%",
+  "voice.heard": "Fala ouvida: {seconds} s",
+  "voice.meterAria": "Proporção de traços vistos em vozes sintéticas",
 };

@@ -1,5 +1,6 @@
 import type { FaceTracker } from "../engine/analyzer";
 import type { Sensitivity } from "../engine/types";
+import type { VoiceSnapshot } from "../audio/features";
 import { tEn, type Translate } from "../i18n";
 
 export const APP_VERSION = "1.0.0";
@@ -12,6 +13,26 @@ export interface SessionInfo {
   startedAt: Date;
   seconds: number;
   sensitivity: Sensitivity;
+  /** The experimental voice reading, when that setting was on and tab audio was heard. */
+  voice?: VoiceSnapshot | null;
+}
+
+/** Numbers only. Never audio, never words. It sits apart from the face results and does not feed their score. */
+export function voiceReport(v: VoiceSnapshot) {
+  return {
+    speechSeconds: round(v.speechSeconds, 1),
+    analyzedSeconds: round(v.analyzedSeconds, 1),
+    suspicion: round(v.suspicion),
+    confidence: round(v.confidence),
+    metrics: v.metrics && {
+      flatness: round(v.metrics.flatness),
+      rolloffHz: Math.round(v.metrics.rolloffHz),
+      highBandRatio: round(v.metrics.highBandRatio, 6),
+      pitchStepSemitones: round(v.metrics.pitchStepSemitones),
+      levelStep: round(v.metrics.levelStep),
+      fluxVariation: round(v.metrics.fluxVariation),
+    },
+  };
 }
 
 /** A self-contained record of the session. Contains numbers only: no images or video. */
@@ -24,6 +45,7 @@ export function buildReport(info: SessionInfo, tracker: FaceTracker) {
     startedAt: info.startedAt.toISOString(),
     durationSeconds: Math.round(info.seconds),
     sensitivity: info.sensitivity,
+    ...(info.voice ? { experimental: { voice: voiceReport(info.voice) } } : {}),
     people: tracker
       .all()
       .filter(({ analyzer }) => analyzer.latest && (analyzer.latest.level !== "collecting" || analyzer.timeline.length > 0))

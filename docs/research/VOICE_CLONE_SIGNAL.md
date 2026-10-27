@@ -1,6 +1,15 @@
 # Research: an on-device voice-clone signal from shared tab audio
 
-Status: research notes for issue #6. Nothing here is implemented, and no audio detector ships with Verilive. A detector only goes in once it passes the evaluation plan below.
+Status: research notes for issue #6, plus a first prototype. Verilive ships only an **off-by-default, unvalidated "voice signal"** built from the cheapest approach below (signal-processing features, no model). It is a hint that never changes the face verdict, not a detector. A real detector only goes in once it passes the evaluation plan below.
+
+## What the prototype does
+
+- Setting "Experimental: voice signal", off by default. With it on, "Check a live call" asks for tab audio (`getDisplayMedia({ audio: true })`); with no audio track the card says it is not listening.
+- An AudioWorklet (`src/audio/voice.worklet.ts`, bundled by Vite, same-origin, so `script-src 'self'` holds) cuts the audio into 2048-sample frames and posts only feature numbers, about twice a second. No `MediaRecorder`, no buffers kept, nothing sent, no model.
+- Features (`src/audio/features.ts`, pure and unit-tested on a tone, white noise and band-limited noise): spectral flatness, 95 percent rolloff, share of energy above 6 kHz, spectral flux, pitch and voicing by autocorrelation, level.
+- Reading: four traits (no high band on a wide stream, small pitch steps, even loudness, even spectral change), each 0 to 1, averaged. Evidence is seconds of voiced speech out of 20; it stays "still listening" below about 8. These cut-offs are guesses, not calibrated on call audio.
+- It is shown as a separate "Voice (experimental)" card and adds an `experimental.voice` object of numbers to the saved report. The face score, level and summary are untouched. Turning the setting off, ending the share or leaving the session disconnects everything.
+- Not done: any labelled data, error rates, calibration, per-speaker attribution, audio-visual consistency. Those remain the evaluation plan below, and until they are done the readout should not be read as evidence of a clone.
 
 ## Goal and constraints
 
@@ -33,7 +42,7 @@ Processing can stay local with the Web Audio API: a `MediaStreamAudioSourceNode`
 | Audio-visual consistency | Compare mouth opening from the existing face mesh with the audio energy envelope (lip-sync agreement, SyncNet-style) | Cheap; reuses the face pipeline | Needs a single clear speaker; call latency and audio-video drift add noise; a voice clone over a real face passes, and a lip-synced fake may too |
 | Physical and behavioural cues | Breathing and pauses, room noise continuity, pitch range, unnaturally clean silence | Cheap | Weak on their own; overlap with noise suppression behaviour; easily changed by the clone's author |
 
-A realistic first experiment is the small neural detector and the audio-visual consistency check, evaluated on call-like audio, with the cheap feature classifier as the baseline to beat.
+A realistic first experiment is the small neural detector and the audio-visual consistency check, evaluated on call-like audio, with the cheap feature classifier as the baseline to beat. The prototype above implements only the cheap feature row, with hand-set thresholds instead of a trained classifier, so it is a starting point for that baseline, not the baseline itself.
 
 ## Limits to state up front
 

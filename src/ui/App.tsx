@@ -19,6 +19,16 @@ function readTheme(): Theme {
   }
 }
 
+const VOICE_KEY = "verilive-voice";
+
+function readVoice(): boolean {
+  try {
+    return localStorage.getItem(VOICE_KEY) === "on";
+  } catch {
+    return false;
+  }
+}
+
 export function App() {
   return (
     <I18nProvider>
@@ -37,6 +47,18 @@ function AppShell() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>(readTheme);
+  // Experimental, off by default. Remembered in this browser only.
+  const [voice, setVoice] = useState<boolean>(readVoice);
+  const voiceRef = useRef(voice);
+  const changeVoice = useCallback((on: boolean) => {
+    voiceRef.current = on;
+    setVoice(on);
+    try {
+      localStorage.setItem(VOICE_KEY, on ? "on" : "off");
+    } catch {
+      /* storage can be unavailable; the setting still applies for this visit */
+    }
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -61,7 +83,7 @@ function AppShell() {
     let stream: MediaStream | undefined;
     try {
       // Ask for the screen or camera first, while the click still counts as a user gesture.
-      if (kind === "screen") stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30 } }, audio: false });
+      if (kind === "screen") stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30 } }, audio: voiceRef.current });
       if (kind === "camera") stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
     } catch (e) {
       setError(sourceError(kind, e, t));
@@ -133,9 +155,9 @@ function AppShell() {
       )}
 
       {view && scanner ? (
-        <Session key={view.key} kind={view.kind} file={view.file} stream={view.stream} scanner={scanner} onExit={exit} />
+        <Session key={view.key} kind={view.kind} file={view.file} stream={view.stream} scanner={scanner} onExit={exit} voiceEnabled={voice} onVoiceChange={changeVoice} />
       ) : (
-        <Home onStart={start} error={error} busy={!!loading} />
+        <Home onStart={start} error={error} busy={!!loading} voice={voice} onVoiceChange={changeVoice} />
       )}
 
       <footer className="footer">

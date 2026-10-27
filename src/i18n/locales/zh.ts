@@ -186,4 +186,19 @@ export const zh: Dictionary = {
   "summary.header": "Verilive 检测 · {date} · {minutes} 分钟 · {source}",
   "summary.none": "没有分析任何人脸。",
   "summary.person": "第 {id} 人：{verdict}（风险 {risk}%，证据 {evidence}%）",
+
+  // Experimental voice signal
+  "voice.setting.label": "实验性：语音信号",
+  "voice.setting.hint": "未经验证的实验功能。当你共享浏览器标签页并勾选“共享标签页音频”时，Verilive 会测量声音中几项在合成语音中常见的特征。它可能在两个方向上都出错，并且绝不会改变人脸判定。音频仅在本设备上分析，不会被录制或发送。下次共享标签页时生效。",
+  "voice.title": "语音（实验性）",
+  "voice.caveat": "未经验证的实验功能。它不会改变人脸判定，真实的声音也可能出现这些特征。",
+  "voice.state.unavailable": "此来源不可用。语音检查需要共享带音频的浏览器标签页。",
+  "voice.state.noAudio": "未在监听：没有共享标签页音频。请结束会话，然后共享浏览器标签页并勾选“共享标签页音频”。",
+  "voice.state.error": "无法在此浏览器中开始监听。",
+  "voice.state.listening": "正在监听。语音还不够多，暂时无法判断（已听到 {seconds} 秒）。",
+  "voice.state.low": "到目前为止，听到的声音没有异常。",
+  "voice.state.some": "出现了一些合成语音中常见的特征，例如音高非常平稳或缺少高频。质量差的麦克风和通话滤镜也会造成这些特征。仅作提示参考。",
+  "voice.score": "类似合成语音的特征 · {percent}%",
+  "voice.heard": "已听到语音：{seconds} 秒",
+  "voice.meterAria": "合成语音特征所占比例",
 };

@@ -186,4 +186,19 @@ export const de: Dictionary = {
   "summary.header": "Verilive-Prüfung · {date} · {minutes} Min. · {source}",
   "summary.none": "Es wurden keine Gesichter analysiert.",
   "summary.person": "Person {id}: {verdict} (Risiko {risk} %, Hinweise {evidence} %)",
+
+  // Experimental voice signal
+  "voice.setting.label": "Experimentell: Stimmsignal",
+  "voice.setting.hint": "Nicht validiertes Experiment. Wenn Sie einen Browser-Tab mit gesetztem „Tab-Audio teilen“ freigeben, misst Verilive einige Merkmale der Stimme, die bei synthetischer Sprache häufig sind. Es kann in beide Richtungen irren und ändert nie das Gesichtsurteil. Das Audio wird auf diesem Gerät analysiert und weder aufgezeichnet noch gesendet. Gilt ab der nächsten Tab-Freigabe.",
+  "voice.title": "Stimme (experimentell)",
+  "voice.caveat": "Nicht validiertes Experiment. Es ändert das Gesichtsurteil nicht, und auch eine echte Stimme kann diese Merkmale zeigen.",
+  "voice.state.unavailable": "Für diese Quelle nicht verfügbar. Die Stimmprüfung braucht einen freigegebenen Browser-Tab samt Audio.",
+  "voice.state.noAudio": "Kein Zuhören: Es wurde kein Tab-Audio geteilt. Beenden Sie die Sitzung, geben Sie einen Browser-Tab frei und setzen Sie „Tab-Audio teilen“.",
+  "voice.state.error": "Das Zuhören konnte in diesem Browser nicht gestartet werden.",
+  "voice.state.listening": "Hört zu. Noch nicht genug Sprache für eine Aussage ({seconds} s gehört).",
+  "voice.state.low": "Bisher nichts Ungewöhnliches in den gehörten Stimmen.",
+  "voice.state.some": "Einige Merkmale, die bei synthetischen Stimmen vorkommen, etwa sehr gleichmäßige Tonhöhe oder fehlende hohe Frequenzen. Schlechte Mikrofone und Anruf-Filter verursachen sie ebenfalls. Nur als Hinweis verstehen.",
+  "voice.score": "Merkmale synthetischer Stimmen · {percent} %",
+  "voice.heard": "Gehörte Sprache: {seconds} s",
+  "voice.meterAria": "Anteil der Merkmale synthetischer Stimmen",
 };

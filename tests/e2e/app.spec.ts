@@ -91,6 +91,24 @@ test("camera mode starts and asks for a face when none is visible", async ({ pag
   await expect(page.getByTestId("start-camera")).toBeVisible();
 });
 
+test("the experimental voice signal is off by default, labelled unvalidated, and stays out of other sources", async ({ page }) => {
+  await page.goto("./");
+  const toggle = page.getByTestId("voice-toggle");
+  await expect(toggle).not.toBeChecked();
+  await expect(page.getByText("Experimental: voice signal")).toBeVisible();
+  await expect(page.getByText(/Unvalidated experiment/)).toBeVisible();
+  await page.getByTestId("start-camera").click();
+  await expect(page.getByTestId("session")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId("voice-card")).toHaveCount(0);
+  // Turning it on in the session settings shows a separate card, and a camera has no tab audio to hear.
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByTestId("voice-toggle-session").check();
+  await expect(page.getByTestId("voice-card")).toContainText("Voice (experimental)");
+  await expect(page.getByTestId("voice-text")).toContainText("Not available for this source");
+  await page.getByTestId("voice-toggle-session").uncheck();
+  await expect(page.getByTestId("voice-card")).toHaveCount(0);
+});
+
 test("works on a phone-sized screen without sideways scrolling", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 800 });
   await page.goto("./");

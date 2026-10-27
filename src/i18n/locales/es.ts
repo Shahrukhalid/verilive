@@ -186,4 +186,19 @@ export const es: Dictionary = {
   "summary.header": "Análisis de Verilive · {date} · {minutes} min · {source}",
   "summary.none": "No se analizó ninguna cara.",
   "summary.person": "Persona {id}: {verdict} (riesgo {risk}%, evidencia {evidence}%)",
+
+  // Experimental voice signal
+  "voice.setting.label": "Experimental: señal de voz",
+  "voice.setting.hint": "Experimento sin validar. Cuando compartes una pestaña del navegador con \"Compartir audio de la pestaña\" marcado, Verilive mide algunos rasgos de la voz que son comunes en el habla sintética. Puede equivocarse en ambos sentidos y nunca cambia el veredicto del rostro. El audio se analiza en este dispositivo y nunca se graba ni se envía. Se aplica la próxima vez que compartas una pestaña.",
+  "voice.title": "Voz (experimental)",
+  "voice.caveat": "Experimento sin validar. No cambia el veredicto del rostro, y una voz real también puede mostrar estos rasgos.",
+  "voice.state.unavailable": "No disponible para esta fuente. La comprobación de voz necesita una pestaña del navegador compartida con su audio.",
+  "voice.state.noAudio": "No está escuchando: no se compartió el audio de la pestaña. Termina la sesión, comparte una pestaña del navegador y marca \"Compartir audio de la pestaña\".",
+  "voice.state.error": "No se pudo empezar a escuchar en este navegador.",
+  "voice.state.listening": "Escuchando. Todavía no hay suficiente habla para decir nada ({seconds} s escuchados).",
+  "voice.state.low": "Nada inusual en las voces escuchadas hasta ahora.",
+  "voice.state.some": "Algunos rasgos propios de las voces sintéticas, como un tono muy uniforme o falta de frecuencias agudas. Los micrófonos de mala calidad y los filtros de las llamadas también los causan. Tómalo solo como una pista.",
+  "voice.score": "Rasgos de voz sintética · {percent}%",
+  "voice.heard": "Habla escuchada: {seconds} s",
+  "voice.meterAria": "Proporción de rasgos propios de las voces sintéticas",
 };
