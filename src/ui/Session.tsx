@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { VoiceMonitor, type VoiceView } from "../audio/voiceMonitor";
 import type { Box, TimelinePoint } from "../engine/analyzer";
 import type { Assessment, Sensitivity } from "../engine/types";
 import { useI18n } from "../i18n/react";
 import type { ScannedFace, Scanner } from "../vision/scanner";
 import { LEVEL_COLOR, PersonCard } from "./PersonCard";
 import { PipView, pipSupported, usePip } from "./Pip";
+import { VoiceCard } from "./VoiceCard";
 import { buildReport, summaryText, type SourceKind } from "./report";
 import { CopyIcon, DownloadIcon, PauseIcon, PlayIcon, SettingsIcon, PipIcon, StopIcon, TurnIcon } from "./icons";
 
@@ -20,7 +22,7 @@ interface Person {
 const FRAME_INTERVAL_MS = 45; // up to ~20 analyses per second, limited by the video's frame rate
 const CHECK_SECONDS = 12;
 
-export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceKind; file?: File; stream?: MediaStream; scanner: Scanner; onExit: (error?: string) => void }) {
+export function Session({ kind, file, stream, scanner, onExit, voiceEnabled, onVoiceChange }: { kind: SourceKind; file?: File; stream?: MediaStream; scanner: Scanner; onExit: (error?: string) => void; voiceEnabled: boolean; onVoiceChange: (on: boolean) => void }) {
   const { t } = useI18n();
   const pip = usePip();
   const canPip = pipSupported();
@@ -52,6 +54,8 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
   const zoomRef = useRef(zoom);
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const [dragRect, setDragRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const voiceMonitor = useRef<VoiceMonitor | null>(null);
+  const [voiceView, setVoiceView] = useState<VoiceView | null>(null);
   const overlayRef = useRef(overlay);
   useEffect(() => {
     overlayRef.current = overlay;
@@ -160,6 +164,11 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
       );
       setElapsed(t);
       setHidden(document.hidden);
+      const monitor = voiceMonitor.current;
+      if (monitor) {
+        monitor.paused = paused.current;
+        setVoiceView(monitor.view());
+      }
     }, 400);
     return () => window.clearInterval(id);
   }, [scanner]);
@@ -263,8 +272,8 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
   };
 
   const report = useCallback(
-    () => buildReport({ kind, label, startedAt: startedAt.current, seconds: elapsed, sensitivity }, scanner.tracker),
-    [kind, label, elapsed, sensitivity, scanner],
+    () => buildReport({ kind, label, startedAt: startedAt.current, seconds: elapsed, sensitivity, voice: voiceEnabled ? voiceView?.snapshot : null }, scanner.tracker),
+    [kind, label, elapsed, sensitivity, scanner, voiceEnabled, voiceView],
   );
 
   const download = () => {
@@ -287,6 +296,20 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
   };
 
   const ended = status === "ended";
+
+  // Experimental voice signal: only when the setting is on and a shared screen carries an audio track.
+  // Leaving the setting, ending the share or closing the session stops and disconnects the listener.
+  useEffect(() => {
+    if (!voiceEnabled || ended || kind !== "screen" || !stream) return;
+    const monitor = new VoiceMonitor(stream);
+    voiceMonitor.current = monitor;
+    void monitor.start();
+    return () => {
+      monitor.stop();
+      voiceMonitor.current = null;
+      setVoiceView(monitor.view());
+    };
+  }, [voiceEnabled, ended, kind, stream]);
   const worst = people.reduce<Person | null>((w, p) => (!w || rank(p.assessment.level) > rank(w.assessment.level) ? p : w), null);
 
   return (
@@ -334,6 +357,12 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
                 <label className="field" style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <input type="checkbox" checked={overlay} onChange={(e) => setOverlay(e.target.checked)} /> {t("session.showBoxes")}
                 </label>
+                <div className="field">
+                  <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <input type="checkbox" checked={voiceEnabled} onChange={(e) => onVoiceChange(e.target.checked)} data-testid="voice-toggle-session" /> {t("voice.setting.label")}
+                  </label>
+                  <span className="muted" style={{ fontSize: 13 }}>{t("voice.setting.hint")}</span>
+                </div>
               </div>
             )}
           </div>
@@ -401,6 +430,8 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
         {people.map((p) => (
           <PersonCard key={p.id} {...p} />
         ))}
+
+        {voiceEnabled && <VoiceCard available={kind === "screen"} view={voiceView} />}
 
         <div className="card check">
           <div className="panel-title">{t("check.title")}</div>
