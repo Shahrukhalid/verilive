@@ -68,7 +68,7 @@ Details, formulas and thresholds: **[docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md)
 
 ## Honest limitations
 
-Verilive gives **risk signals, not proof**. Heavy compression, beauty filters and bad lighting can make a real person look suspicious, and the best deepfakes may pass. It does not analyze voices yet. Thresholds were set from research and simulations, not a large benchmark. Read **[docs/LIMITATIONS.md](docs/LIMITATIONS.md)**, and if a call asks for money, codes or urgent action, verify the person another way, whatever the score says.
+Verilive gives **risk signals, not proof**. Heavy compression, beauty filters and bad lighting can make a real person look suspicious, and the best deepfakes may pass. It does not analyze voices yet (see [research notes](docs/research/VOICE_CLONE_SIGNAL.md)). Thresholds were set from research and simulations, not a large benchmark. Read **[docs/LIMITATIONS.md](docs/LIMITATIONS.md)**, and if a call asks for money, codes or urgent action, verify the person another way, whatever the score says.
 
 ## Run it yourself
 
@@ -93,7 +93,7 @@ src/engine/   detectors and scoring (pure TypeScript, unit-tested)
 src/vision/   face landmarks, pixel measurements, small-face search
 src/ui/       React interface
 tests/        unit tests (synthetic signals) and end-to-end tests (generated videos)
-docs/         how it works, limitations, screenshots
+docs/         how it works, limitations, translating, evaluation, research notes, screenshots
 ```
 
 ## Roadmap

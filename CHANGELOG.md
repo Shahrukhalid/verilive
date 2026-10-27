@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The interface is translated into nine languages (English, Filipino, Spanish, French, German, Portuguese, Indonesian, Chinese, Japanese), chosen from the browser's language; see `docs/TRANSLATING.md`. Thanks to rangerisrael.
+- Person cards show a live pulse waveform (the last six seconds) once the pulse can be measured; it respects reduced-motion settings.
+- Picture-in-picture button (browsers with the Document Picture-in-Picture API) floats each person's verdict over the call.
+- `npm run evaluate` runs the engine over a folder of labelled videos and reports accuracy, precision, recall and per-signal statistics; see `docs/EVALUATION.md`.
+- Research notes on an on-device voice-clone signal (no detector shipped): `docs/research/VOICE_CLONE_SIGNAL.md`.
 - Head-turn test no longer reports a strong "face swap" reading when the head-on frames have no measured shape wobble (missing data was divided by a near-zero value).
 - Session timer and the report's duration exclude paused time and stop when the recording or screen share ends.
 - Resuming a recording no longer leaves an unhandled promise rejection when the browser refuses to play; the session returns to paused.

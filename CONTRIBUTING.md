@@ -32,7 +32,7 @@ npm run e2e        # the real app in Chromium on test videos (first run: npx pla
 | `src/ui/` | React interface. |
 | `tests/unit/` | Detector tests on deterministic synthetic data (`synth.ts`). |
 | `tests/e2e/` | Playwright tests on generated videos (`scripts/make-fixtures.py`). |
-| `docs/` | How it works and limitations. |
+| `docs/` | How it works, limitations, translating, evaluation and research notes. |
 
 ## Ground rules
 
