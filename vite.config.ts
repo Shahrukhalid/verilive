@@ -1,33 +1,10 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import type { Plugin } from "vite";
-
-/** Strict Content Security Policy for the production build: the page can only talk to itself. */
-const CSP = [
-  "default-src 'self'",
-  "script-src 'self' 'wasm-unsafe-eval'",
-  "style-src 'self'",
-  "img-src 'self' data: blob:",
-  "media-src 'self' blob: mediastream:",
-  "font-src 'self'",
-  "connect-src 'self'",
-  "worker-src 'self' blob:",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'none'",
-].join("; ");
+import { injectCsp } from "./scripts/csp";
 
 function csp(): Plugin {
-  return {
-    name: "verilive-csp",
-    apply: "build",
-    transformIndexHtml: (html) => {
-      const charset = /<meta\s+charset=["']?utf-8["']?\s*\/?>/i;
-      // Fail the build rather than ship a page without its Content Security Policy.
-      if (!charset.test(html)) throw new Error("verilive-csp: <meta charset> not found in index.html; cannot inject the Content Security Policy.");
-      return html.replace(charset, (tag) => `${tag}\n    <meta http-equiv="Content-Security-Policy" content="${CSP}" />\n    <meta name="referrer" content="no-referrer" />`);
-    },
-  };
+  return { name: "verilive-csp", apply: "build", transformIndexHtml: injectCsp };
 }
 
 /**
