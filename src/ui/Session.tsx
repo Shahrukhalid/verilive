@@ -4,14 +4,16 @@ import type { Assessment, Sensitivity } from "../engine/types";
 import { useI18n } from "../i18n/react";
 import type { ScannedFace, Scanner } from "../vision/scanner";
 import { LEVEL_COLOR, PersonCard } from "./PersonCard";
+import { PipView, pipSupported, usePip } from "./Pip";
 import { buildReport, summaryText, type SourceKind } from "./report";
-import { CopyIcon, DownloadIcon, PauseIcon, PlayIcon, SettingsIcon, StopIcon, TurnIcon } from "./icons";
+import { CopyIcon, DownloadIcon, PauseIcon, PlayIcon, SettingsIcon, PipIcon, StopIcon, TurnIcon } from "./icons";
 
 type Status = "starting" | "running" | "paused" | "ended" | "error";
 interface Person {
   id: number;
   assessment: Assessment;
   timeline: TimelinePoint[];
+  wave: number[];
   onScreen: boolean;
 }
 
@@ -20,6 +22,8 @@ const CHECK_SECONDS = 12;
 
 export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceKind; file?: File; stream?: MediaStream; scanner: Scanner; onExit: (error?: string) => void }) {
   const { t } = useI18n();
+  const pip = usePip();
+  const canPip = pipSupported();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const latest = useRef<ScannedFace[]>([]);
@@ -152,7 +156,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
         scanner.tracker
           .all()
           .filter((p) => p.analyzer.latest)
-          .map((p) => ({ id: p.id, assessment: p.analyzer.latest!, timeline: [...p.analyzer.timeline], onScreen: onScreen.has(p.id) })),
+          .map((p) => ({ id: p.id, assessment: p.analyzer.latest!, timeline: [...p.analyzer.timeline], wave: p.analyzer.wave, onScreen: onScreen.has(p.id) })),
       );
       setElapsed(t);
       setHidden(document.hidden);
@@ -287,6 +291,7 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
 
   return (
     <main className="wrap session" data-testid="session">
+      {pip.win && <PipView win={pip.win} people={people} onClose={pip.close} />}
       <div style={{ minWidth: 0 }}>
         <div className="toolbar">
           <span className={`live${status === "running" ? "" : " paused"}`} data-testid="status">
@@ -301,6 +306,12 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
             <button className="btn" onClick={togglePause} disabled={status === "starting"}>
               {status === "paused" ? <PlayIcon /> : <PauseIcon />}
               <span className="hide-sm">{status === "paused" ? t("session.resume") : t("session.pause")}</span>
+            </button>
+          )}
+          {canPip && (
+            <button className="btn" onClick={() => void (pip.win ? pip.close() : pip.open())} aria-pressed={!!pip.win} title={t("pip.note")} data-testid="pip-toggle">
+              <PipIcon />
+              <span className="hide-sm">{t(pip.win ? "pip.close" : "pip.open")}</span>
             </button>
           )}
           <div className="rel">
