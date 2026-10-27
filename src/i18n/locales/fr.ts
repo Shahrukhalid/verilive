@@ -186,4 +186,19 @@ export const fr: Dictionary = {
   "summary.header": "Vérification Verilive · {date} · {minutes} min · {source}",
   "summary.none": "Aucun visage n'a été analysé.",
   "summary.person": "Personne {id} : {verdict} (risque {risk} %, preuves {evidence} %)",
+
+  // Experimental voice signal
+  "voice.setting.label": "Expérimental : signal vocal",
+  "voice.setting.hint": "Expérience non validée. Lorsque vous partagez un onglet du navigateur avec « Partager l'audio de l'onglet » coché, Verilive mesure quelques traits de la voix fréquents dans la parole synthétique. Elle peut se tromper dans les deux sens et ne modifie jamais le verdict sur le visage. L'audio est analysé sur cet appareil, jamais enregistré ni envoyé. Prend effet au prochain partage d'onglet.",
+  "voice.title": "Voix (expérimental)",
+  "voice.caveat": "Expérience non validée. Elle ne modifie pas le verdict sur le visage, et une vraie voix peut aussi présenter ces traits.",
+  "voice.state.unavailable": "Indisponible pour cette source. La vérification de la voix nécessite un onglet du navigateur partagé avec son audio.",
+  "voice.state.noAudio": "Pas d'écoute : l'audio de l'onglet n'a pas été partagé. Terminez la session, partagez un onglet du navigateur et cochez « Partager l'audio de l'onglet ».",
+  "voice.state.error": "Impossible de démarrer l'écoute dans ce navigateur.",
+  "voice.state.listening": "Écoute en cours. Pas encore assez de parole pour conclure ({seconds} s entendues).",
+  "voice.state.low": "Rien d'inhabituel dans les voix entendues jusqu'ici.",
+  "voice.state.some": "Quelques traits observés dans les voix synthétiques, comme une hauteur très régulière ou l'absence de hautes fréquences. Les mauvais micros et les filtres d'appel les provoquent aussi. À considérer comme un simple indice.",
+  "voice.score": "Traits de voix synthétique · {percent} %",
+  "voice.heard": "Parole entendue : {seconds} s",
+  "voice.meterAria": "Part des traits observés dans les voix synthétiques",
 };

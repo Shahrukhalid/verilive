@@ -186,4 +186,19 @@ export const id: Dictionary = {
   "summary.header": "Pemeriksaan Verilive · {date} · {minutes} mnt · {source}",
   "summary.none": "Tidak ada wajah yang dianalisis.",
   "summary.person": "Orang {id}: {verdict} (risiko {risk}%, bukti {evidence}%)",
+
+  // Experimental voice signal
+  "voice.setting.label": "Eksperimental: sinyal suara",
+  "voice.setting.hint": "Eksperimen yang belum divalidasi. Saat Anda membagikan tab browser dengan \"Bagikan audio tab\" dicentang, Verilive mengukur beberapa ciri suara yang umum pada ucapan sintetis. Hasilnya bisa keliru ke dua arah dan tidak pernah mengubah vonis wajah. Audio dianalisis di perangkat ini, tidak pernah direkam atau dikirim. Berlaku saat Anda berikutnya membagikan tab.",
+  "voice.title": "Suara (eksperimental)",
+  "voice.caveat": "Eksperimen yang belum divalidasi. Tidak mengubah vonis wajah, dan suara asli pun bisa menunjukkan ciri-ciri ini.",
+  "voice.state.unavailable": "Tidak tersedia untuk sumber ini. Pemeriksaan suara memerlukan tab browser yang dibagikan beserta audionya.",
+  "voice.state.noAudio": "Tidak mendengarkan: audio tab tidak dibagikan. Akhiri sesi, bagikan tab browser, lalu centang \"Bagikan audio tab\".",
+  "voice.state.error": "Tidak dapat mulai mendengarkan di browser ini.",
+  "voice.state.listening": "Mendengarkan. Ucapan belum cukup untuk menyimpulkan apa pun ({seconds} dtk terdengar).",
+  "voice.state.low": "Tidak ada yang janggal pada suara yang terdengar sejauh ini.",
+  "voice.state.some": "Ada beberapa ciri yang terlihat pada suara sintetis, seperti nada yang sangat rata atau tidak adanya frekuensi tinggi. Mikrofon buruk dan filter panggilan juga menyebabkannya. Anggap hanya sebagai petunjuk.",
+  "voice.score": "Ciri suara sintetis · {percent}%",
+  "voice.heard": "Ucapan terdengar: {seconds} dtk",
+  "voice.meterAria": "Porsi ciri yang terlihat pada suara sintetis",
 };
