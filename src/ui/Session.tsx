@@ -231,16 +231,20 @@ export function Session({ kind, file, stream, scanner, onExit }: { kind: SourceK
     [scanner],
   );
 
+  const playAttempt = useRef(0);
   const togglePause = () => {
     paused.current = !paused.current;
     if (paused.current) stopClock();
     else clock.current.since = performance.now();
     const v = videoRef.current;
+    const attempt = ++playAttempt.current;
     if (kind === "file" && v) {
       if (paused.current) v.pause();
       // play() can reject (e.g. the browser blocks playback); go back to paused instead of an unhandled rejection.
       else
         v.play().catch(() => {
+          // Ignore rejections from superseded attempts (a later pause/resume owns the state now).
+          if (attempt !== playAttempt.current) return;
           paused.current = true;
           stopClock();
           setStatus("paused");
