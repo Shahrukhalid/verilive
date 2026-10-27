@@ -1,7 +1,7 @@
 import { analyzeFlicker, analyzeTexture } from "./appearance";
 import { analyzeBlink } from "./blink";
 import { analyzeJitter, analyzePose } from "./geometry";
-import { analyzePulse } from "./pulse";
+import { analyzePulseWithWave } from "./pulse";
 import { combine } from "./scoring";
 import type { Assessment, FaceFrame, Sensitivity } from "./types";
 
@@ -20,6 +20,8 @@ export class FaceAnalyzer {
   readonly timeline: TimelinePoint[] = [];
   /** Frames recorded during guided checks, kept beyond the rolling window. */
   readonly checkFrames: FaceFrame[] = [];
+  /** Last few seconds of the band-passed pulse waveform, refreshed with each assessment. */
+  wave: number[] = [];
   private last: Assessment | null = null;
   private lastEval = -Infinity;
 
@@ -40,8 +42,10 @@ export class FaceAnalyzer {
     const f = this.frames;
     // The guided head-turn check is kept beyond the rolling window, so its result never expires.
     const poseFrames = this.checkFrames.length ? mergeByTime(this.checkFrames, f) : f;
+    const pulse = analyzePulseWithWave(f);
+    this.wave = pulse.wave;
     const result = combine(
-      [analyzePulse(f), analyzePose(poseFrames), analyzeTexture(f), analyzeBlink(f), analyzeFlicker(f), analyzeJitter(f)],
+      [pulse.result, analyzePose(poseFrames), analyzeTexture(f), analyzeBlink(f), analyzeFlicker(f), analyzeJitter(f)],
       sensitivity,
     );
     this.last = result;
@@ -58,6 +62,7 @@ export class FaceAnalyzer {
   release(): void {
     this.frames.length = 0;
     this.checkFrames.length = 0;
+    this.wave = [];
   }
 }
 
