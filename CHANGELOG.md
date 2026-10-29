@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 (2026-10-29)
 
 - The interface is translated into nine languages (English, Filipino, Spanish, French, German, Portuguese, Indonesian, Chinese, Japanese), chosen from the browser's language; see `docs/TRANSLATING.md`. Thanks to rangerisrael.
 - Person cards show a live pulse waveform (the last six seconds) once the pulse can be measured; it respects reduced-motion settings.
