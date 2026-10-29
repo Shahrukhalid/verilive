@@ -101,9 +101,9 @@ docs/         how it works, limitations, translating, evaluation, research notes
 
 ## Roadmap
 
-- Validate (or retire) the experimental voice signal on call-like audio
-- Evaluation on public deepfake datasets and published accuracy numbers
-- Optional opt-in ONNX classifier for frame-level artifacts
+- [ ] Validate (or retire) the experimental voice signal on call-like audio
+- [ ] Evaluation on public deepfake datasets and published accuracy numbers
+- [ ] Optional opt-in ONNX classifier for frame-level artifacts
 
 Ideas and research pointers are welcome in [Discussions](https://github.com/Shahrukhalid/verilive/discussions).
 
